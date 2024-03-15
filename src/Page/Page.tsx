@@ -1,5 +1,4 @@
 import { useState } from "react";
-import styles from "./Page.module.css";
 import { NodeData } from "../utils/types";
 import { useFocusedNodeIndex } from "./useFocusNodeIndex";
 import { Cover } from "./Cover";
@@ -50,7 +49,7 @@ export const Page = () => {
             ))}
         <Spacer showHint={!nodes.length}
         handleClick={() => {
-            addNode({type: 'text', value: "", id:nanoid()}, nodes.length)
+            addNode({type: 'text', value: "", id: nanoid()}, nodes.length)
         }}/>
         </div>
         </>

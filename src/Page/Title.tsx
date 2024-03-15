@@ -17,7 +17,8 @@ export const Title = ({title, changePageTitle, addNode}: TitleProps) => {
             headerRef.current.textContent = title;
         }
     }, [title])
-    return (<div className={styles.container}>
+    return (
+    <div className={styles.container}>
         <h1 className={styles.title} 
         contentEditable
         suppressContentEditableWarning
