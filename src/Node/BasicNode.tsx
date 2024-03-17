@@ -4,6 +4,7 @@ import styles from "./Node.module.css"
 import { nanoid } from "nanoid";
 import { useAppState } from "../state/AppStateContext";
 import { CommandPanel } from "./CommandPanel";
+import cx from "classnames";
 
 type BasicNodeProps = {
     node: NodeData;
@@ -86,7 +87,7 @@ export const BasicNode = ({
         onKeyDown={onKeyDown}
         ref={nodeRef} contentEditable
         suppressContentEditableWarning
-        className={styles.node}></div>
+        className={cx(styles.node, styles[node.type])}></div>
         </>
     )
 }

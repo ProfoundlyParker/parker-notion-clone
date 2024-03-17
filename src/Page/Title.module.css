@@ -7,3 +7,8 @@
 .title {
 	padding: 6px;
 }
+
+.title[contenteditable="true"]::before {
+	content: attr(aria-placeholder);
+	color: #c4c3c3;
+}
