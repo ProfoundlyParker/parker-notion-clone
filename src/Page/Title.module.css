@@ -8,7 +8,11 @@
 	padding: 6px;
 }
 
-.title[contenteditable="true"]::before {
+.title[contenteditable]:empty::before {
 	content: attr(aria-placeholder);
 	color: #c4c3c3;
+}
+
+.title[contenteditable]:empty:focus::before {
+	content: "";
 }
