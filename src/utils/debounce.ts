@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-types */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any
 	? A
 	: never;
