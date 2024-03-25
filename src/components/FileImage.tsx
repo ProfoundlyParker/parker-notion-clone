@@ -20,9 +20,9 @@ export const FileImage = ({ filePath, ...props }: FileImageProps) => {
                 setImage(url);
                 setLoading(false);
             }
+         }
             if (filePath && filePath.length > 0) {
                 downloadImage(filePath);
-            }
         }
     }, [filePath])
 
