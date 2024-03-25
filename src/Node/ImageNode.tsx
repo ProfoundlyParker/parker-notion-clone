@@ -17,7 +17,7 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (!node || node.value.length === 0) {
+        if (!node.value || node.value.length === 0) {
             fileInputRef.current?.click();
         } 
     }, [node.value])
@@ -26,21 +26,21 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
         const handleKeyDown = (event: KeyboardEvent) => {
             event.preventDefault();
             if (event.key === "Backspace") {
-                removeNodeByIndex(index)
+                removeNodeByIndex(index);
             }
             if (event.key === "Enter") {
                 fileInputRef.current?.click();
             }
-            if (isFocused) {
-                window.addEventListener("keydown", handleKeyDown)
-            } else {
-                window.removeEventListener("keydown", handleKeyDown)
-            }
-            
-            return () => {
-                window.removeEventListener("keydown", handleKeyDown)
-            }
+        };
+        if (isFocused) {
+            window.addEventListener("keydown", handleKeyDown);
+        } else {
+            window.removeEventListener("keydown", handleKeyDown);
         }
+        
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
     }, [isFocused, removeNodeByIndex, index, node])
 
     const onImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {

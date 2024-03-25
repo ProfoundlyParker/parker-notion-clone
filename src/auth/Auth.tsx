@@ -7,7 +7,7 @@ import { supabase } from "../supabaseClient";
 export const Auth = () => {
     const [ loading, setLoading ] = useState(false);
     const [ email, setEmail ] = useState("");
-    const { session } = useAuthSession()
+    const { session } = useAuthSession();
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

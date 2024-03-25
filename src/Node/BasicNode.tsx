@@ -45,7 +45,7 @@ export const BasicNode = ({
 
     const handleInput: FormEventHandler<HTMLDivElement> = ({currentTarget}) => {
         const { textContent } = currentTarget;
-        changeNodeValue(index, textContent || "")
+        changeNodeValue(index, textContent || "");
     }
 
     const handleClick = () => {
@@ -74,7 +74,7 @@ export const BasicNode = ({
             }
         }
 
-    }
+    };
     return (
         <>
         {

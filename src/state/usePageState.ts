@@ -8,7 +8,7 @@ export const usePageState = (initialState: Page) => {
 
     const addNode = (node: NodeData, index: number) => {
         setPage((draft) => {draft.nodes.splice(index, 0, node)}
-        )
+        );
     };
 
     const removeNodeByIndex = (nodeIndex: number) => {
@@ -17,7 +17,7 @@ export const usePageState = (initialState: Page) => {
 
     const changeNodeValue = (nodeIndex: number, value: string) => {
         setPage((draft) => {
-            draft.nodes[nodeIndex].value = value
+            draft.nodes[nodeIndex].value = value;
         });
     };
 

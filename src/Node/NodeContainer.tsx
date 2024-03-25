@@ -11,7 +11,7 @@ type NodeContainerProps = {
     index: number;
 };
 
-export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex }: NodeContainer) => {
+export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex }: NodeContainerProps) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
         id: node.id
     })

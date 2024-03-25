@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 import { ImmerHook, useImmer } from "use-immer"
 
 export const useSyncedState = <TState>(
-    initialState: renderToStaticNodeStream,
+    initialState: TState,
     syncCallBack: (state: TState) => void
 ): ImmerHook<TState> => {
     const [state, setState] = useImmer(initialState);

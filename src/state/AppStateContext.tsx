@@ -5,7 +5,7 @@ import { withInitialState } from "./withInitialState";
 
 type AppStateContextType = ReturnType<typeof usePageState>
 
-const AppStateContext = createContext<AppStateContextType>({} as AppStateContextType)
+const AppStateContext = createContext<AppStateContextType>({} as AppStateContextType);
 
 type AppStateProviderProps = {
     children: React.ReactNode;

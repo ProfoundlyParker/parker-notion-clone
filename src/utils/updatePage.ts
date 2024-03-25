@@ -1,4 +1,4 @@
-import debounce from "debounce";
+import { debounce } from "./debounce";
 import { supabase } from "../supabaseClient";
 import { Page } from "./types";
 
