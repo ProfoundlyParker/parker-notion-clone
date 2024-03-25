@@ -1,4 +1,3 @@
-import './App.css';
 import { AppStateProvider } from './state/AppStateContext';
 import { Page } from './Page/Page';
 import { Route, Routes } from 'react-router-dom';
