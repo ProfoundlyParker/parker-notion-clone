@@ -40,7 +40,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
 
     useEffect(() => {
         const fetchPageTitle = async () => {
-            const { data } = await supabase.from("page").select("title").eq("slug", node.value).single();
+            const { data } = await supabase.from("pages").select("title").eq("slug", node.value).single();
             setPageTitle(data?.title);
         }
         if (node.type === "page" && node.value) {
