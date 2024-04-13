@@ -15,10 +15,15 @@ export const Cover = ({ filePath, changePageCover }: CoverProps) => {
     }
     const onCoverImageUpload: ChangeEventHandler<HTMLInputElement> = async (event) => {
         const target = event.target;
-        const result = await uploadImage(target?.files?.[0])
+        const file = target?.files?.[0];
 
-        if (result?.filePath) {
-            changePageCover(result.filePath);
+        try {
+            if (file) {
+                const result = await uploadImage(file);
+                changePageCover(result.filePath);
+            }
+        } catch (error) {
+            console.log("Error uploading cover image:", error)
         }
     }
 
@@ -28,7 +33,7 @@ export const Cover = ({ filePath, changePageCover }: CoverProps) => {
                 filePath ? (
                     <FileImage className={styles.image} filePath={filePath} />
                 ) : (
-                    <img src="src/Page/Cover Image.png" alt="Cover" className={styles.image}/>
+                    <img src="./src/Page/Cover Image.png" alt="Cover" className={styles.image}/>
                 )
             }
             <button className={styles.button} onClick={onChangeCoverImage}>Change cover photo</button>
