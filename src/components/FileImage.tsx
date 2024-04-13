@@ -13,14 +13,21 @@ export const FileImage = ({ filePath, ...props }: FileImageProps) => {
 
     useEffect(() => {
         const downloadImage = async (filePath: string) => {
+            try {
             setLoading(true)
-            const { data } = await supabase.storage.from("images").download(filePath);
+            const { data, error } = await supabase.storage.from("images").download(filePath);
+            if (error) {
+                throw error;
+            }
             if (data) {
                 const url = URL.createObjectURL(data);
                 setImage(url);
                 setLoading(false);
             }
+         } catch (error) {
+            console.log("error downloading image:", error);
          }
+        };
             if (filePath && filePath.length > 0) {
                 downloadImage(filePath);
         }
