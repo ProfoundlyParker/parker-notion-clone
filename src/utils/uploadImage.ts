@@ -10,10 +10,20 @@ export const uploadImage = async (file?: File) => {
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = fileName;
 
-        await supabase.storage.from("images").upload(filePath, file);
+        const { data, error } = await supabase.storage.from("images").upload(filePath, file);
 
-        return {filePath, fileName}
-    } catch (e) {
-        alert(e);
+        if (error) {
+            throw new Error(`Failed to upload image: ${error.message}`)
+        }
+
+        if (data) {
+            return {filePath, fileName}
+        }
+
+
+        // return {filePath, fileName}
+    } catch (error) {
+        console.log("Error uploading image:", error);
+        throw error;
     }
 }
