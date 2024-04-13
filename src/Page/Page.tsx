@@ -19,6 +19,8 @@ export const Page = () => {
         }
     }
 
+    console.log("cover:", cover);
+
     return (
         <>
         <Cover filePath={cover} changePageCover={setCoverImage}/>
