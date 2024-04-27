@@ -1,5 +1,5 @@
 import { NodeData } from "../utils/types"
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef } from "react";
 import { useAppState } from "../state/AppStateContext";
 import cx from "classnames";
 import styles from "./Node.module.css";
@@ -15,8 +15,7 @@ type ImageNodeProps = {
 export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
     const { removeNodeByIndex, changeNodeValue, changeNodeType } = useAppState();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [errorMessage, setErrorMessage] = useState<string>("");
-
+    
     useEffect(() => {
         if ((!node.value || node.value.length === 0) && !fileInputRef.current?.value) {
             fileInputRef.current?.click();
@@ -47,18 +46,12 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
     const onImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const target = event.target;
         const file = target.files?.[0];
-        
-        if (!file || !file.type.startsWith("image/")) {
-            setErrorMessage("Please select a valid image file.")
-            return;
-        }
+
     
         try {
             const result = await uploadImage(file);
             if (result?.filePath) {
                 changeNodeValue(index, result.filePath);
-                // target.value = "";"
-                setErrorMessage("");
             }
         }
         catch (error) {
@@ -74,18 +67,10 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
         <div className={cx(styles.node, styles.image, {
             [styles.focused]: isFocused
         })}>
-        {errorMessage && (
-            <>
-                <div className={styles.error}>{errorMessage}</div>
-                <input type="file" ref={fileInputRef} onChange={onImageUpload} accept="image/*" />
-            </>
-        )}
-        {!errorMessage && (
             <>
                 <FileImage filePath={node.value} />
                 <input type="file" ref={fileInputRef} onChange={onImageUpload} style={{ display: "none" }} accept="image/*" />
             </>
-        )}
         </div>
     )
 }
