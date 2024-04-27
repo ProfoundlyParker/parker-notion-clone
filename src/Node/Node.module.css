@@ -49,3 +49,9 @@
 .focused {
 	background-color: #00bcd4;
 }
+
+.error {
+    color: red; /* Text color */
+    font-size: 14px; /* Font size */
+    margin-top: 8px; /* Spacing from the content above */
+}
