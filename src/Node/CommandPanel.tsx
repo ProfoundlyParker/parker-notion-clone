@@ -30,8 +30,20 @@ export const CommandPanel = ({ selectItem, nodeText }: CommandPanelProps) => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Enter") {
-                selectItem(supportedNodeTypes[selectedItemIndex].value)
+            switch (event.key) {
+                case "ArrowUp":
+                    setSelectedItemIndex(prevIndex =>
+                        prevIndex > 0 ? prevIndex - 1 : supportedNodeTypes.length - 1
+                    );
+                    break;
+                case "ArrowDown": 
+                    setSelectedItemIndex(prevIndex => (prevIndex < supportedNodeTypes.length - 1 ? prevIndex + 1 : 0));
+                    break;
+                case "Enter":
+                    selectItem(supportedNodeTypes[selectedItemIndex].value);
+                    break;
+                default:
+                    break;
             }
         }
 
