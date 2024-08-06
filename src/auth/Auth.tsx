@@ -16,10 +16,10 @@ export const Auth = () => {
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
 
         try {
+            setLoading(true);
             const { error } = await supabase.auth.signInWithOtp({ email });
 
             if (error) {
