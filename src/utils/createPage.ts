@@ -15,6 +15,8 @@ export const createPage = async () => {
 		slug,
 		nodes: [],
 		created_by: user.id,
+		emoji: "",
+		caption: "",
 	};
 
 	await supabase.from("pages").insert(page);

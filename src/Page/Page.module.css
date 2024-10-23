@@ -8,3 +8,38 @@
 	padding-left: 46px;
 	padding-top: 10px;
 }
+
+.backButton {
+    position: absolute;
+    top: 0.3rem;
+    left: 0.3rem;
+    background-color: #414141;
+    color: white;
+    border: none;
+	border-radius: 0.75rem;
+    padding: 0.333rem;
+    cursor: pointer;
+    font-size: 15px;
+    opacity: 80%;
+    z-index: 100;
+}
+
+.backButton:hover {
+    background-color: #3b4754;
+}
+
+.emoji {
+	position: absolute;
+	left: 2rem;
+	transform: translateY(-55%);
+    font-size: 3rem;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.emojiPicker {
+    position: absolute;
+    z-index: 1000;
+    top: 50px;
+    left: 50px;
+}

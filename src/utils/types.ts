@@ -4,6 +4,8 @@ export type NodeData = {
   id: string;
   type: NodeType;
   value: string;
+  caption?: string;
+  emoji?: string;
 }
 
 export type Page = {
