@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Loader } from "./Loader";
 import styles from "../utils.module.css";
@@ -7,7 +7,8 @@ type FileImageProps = {
     filePath: string;
 } & React.ImgHTMLAttributes<HTMLImageElement>
 
-export const FileImage = ({ filePath, ...props }: FileImageProps) => {
+export const FileImage = forwardRef<HTMLImageElement, FileImageProps>(
+    ({ filePath, ...props }, ref) => {
     const [image, setImage] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -28,8 +29,11 @@ export const FileImage = ({ filePath, ...props }: FileImageProps) => {
             console.log("error downloading image:", error);
          }
         };
-            if (filePath && filePath.length > 0) {
-                downloadImage(filePath);
+        if (filePath && filePath.length > 0) {
+            downloadImage(filePath);
+        } else {
+            setLoading(false);
+            setImage("");
         }
     }, [filePath])
 
@@ -39,5 +43,6 @@ export const FileImage = ({ filePath, ...props }: FileImageProps) => {
         </div>
     }
 
-    return <img src={image} alt={filePath} {...props} />
-}
+    return image ? <img src={image} alt={filePath} ref={ref} {...props} /> : null;
+    }
+);

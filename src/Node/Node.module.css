@@ -51,7 +51,68 @@
 }
 
 .error {
-    color: red; /* Text color */
-    font-size: 14px; /* Font size */
-    margin-top: 8px; /* Spacing from the content above */
+    color: red; 
+    font-size: 14px; 
+    margin-top: 8px; 
+}
+
+.imageContainer {
+    position: relative;
+}
+
+.buttonContainer {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.imageContainer:hover .buttonContainer {
+    display: flex;
+}
+
+.button {
+    padding: 0.25rem 0.50rem;
+    border: none;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.button:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.pageContent {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.emoji {
+    font-size: 24px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.emojiPicker {
+    position: absolute;
+    z-index: 1000;
+}
+
+.caption {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+.captionInput {
+    margin-top: 10px;
+    font-size: 12px;
+    width: 100%;
+    padding: 4px;
 }

@@ -3,6 +3,7 @@ import { NodeData, NodeType, Page } from "../utils/types";
 import { useSyncedState } from "./useSyncedState";
 import { updatePage } from "../utils/updatePage";
 import { createPage } from "../utils/createPage";
+import { supabase } from "../supabaseClient";
 
 export const usePageState = (initialState: Page) => {
     const [page, setPage] = useSyncedState(initialState, updatePage);
@@ -65,6 +66,44 @@ export const usePageState = (initialState: Page) => {
         })
     }
 
+    const updateNodeEmoji = async (nodeId: string, emoji: string) => {
+        const { error } = await supabase
+            .from("pages")
+            .update({ emoji })
+            .eq("id", nodeId);
+        console.log(emoji + nodeId);
+        if (error) {
+            console.error("Error updating emoji:", error);
+        }
+    };
+
+    const setEmoji = async (nodeIndex: number, emoji: string) => {
+        setPage((draft) => {
+            draft.nodes[nodeIndex].emoji = emoji;
+        });
+    
+        const nodeIdString = page.nodes[nodeIndex].id;
+
+        if (!nodeIdString) {
+            console.error("Invalid node ID:", nodeIdString);
+            return;
+        }
+
+        await updateNodeEmoji(nodeIdString, emoji);
+    };
+
+    const updateNodeCaptionInDatabase = async (nodeId: string, caption: string) => {
+        const { data, error } = await supabase
+            .from("pages")
+            .update({ caption })
+            .eq("id", nodeId);
+            if (error) {
+                console.error("Error updating caption:", error.message, error.details);
+            } else {
+                console.log("Caption updated successfully:", data);
+            }
+    };
+
     return {
         nodes: page.nodes,
         title: page.title,
@@ -76,6 +115,8 @@ export const usePageState = (initialState: Page) => {
         setTitle,
         setCoverImage,
         setNodes,
-        reorderNodes
+        reorderNodes,
+        setEmoji,
+        updateNodeCaptionInDatabase,
     }
 }
