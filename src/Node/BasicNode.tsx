@@ -22,6 +22,18 @@ export const BasicNode = ({
     const nodeRef = useRef<HTMLDivElement>(null);
     const showCommandPanel = isFocused && node?.value?.match(/^\//);
 
+    const placeCaretAtEnd = (el: HTMLElement) => {
+        el.focus();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        if (sel) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    };    
+
     const { changeNodeValue, changeNodeType, removeNodeByIndex, addNode } = useAppState();
     useEffect(() => {
         if (nodeRef.current && document.activeElement !== nodeRef.current) {
@@ -54,22 +66,89 @@ export const BasicNode = ({
         const target = event.target as HTMLDivElement;
         if (event.key === "Enter") {
             event.preventDefault();
-            if (target.textContent?.[0] === "/") {
-                return;
-            } 
-            addNode({type: node.type, value: "", id: nanoid()}, index + 1);
-            updateFocusedIndex(index + 1)
-        } 
+        
+            if (target.textContent?.[0] === "/") return;
+        
+            const selection = window.getSelection();
+            const range = selection?.getRangeAt(0);
+            const caretPos = range?.startOffset || 0;
+        
+            const fullText = target.textContent || "";
+            const before = fullText.slice(0, caretPos);
+            const after = fullText.slice(caretPos);
+        
+            // Update current node's value
+            changeNodeValue(index, before);
+        
+            // Insert new node with remaining text
+            const newNode = { type: node.type, value: after, id: nanoid() };
+            addNode(newNode, index + 1);
+        
+            // Move focus to new node
+            requestAnimationFrame(() => {
+                const next = document.querySelector(`[data-node-index="${index + 1}"]`) as HTMLDivElement;
+                if (next) {
+                    const range = document.createRange();
+                    range.setStart(next.firstChild || next, 0);
+                    range.collapse(true);
+        
+                    const selection = window.getSelection();
+                    if (selection) {
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+        
+                    updateFocusedIndex(index + 1);
+                }
+            });
+        }
+        
         if (event.key === "Backspace") {
+            const selection = window?.getSelection();
             if (target.textContent?.length === 0) {
                 event.preventDefault();
                 removeNodeByIndex(index);
-                updateFocusedIndex(index - 1);
-            } else if (window?.getSelection()?.anchorOffset === 0) {
+                requestAnimationFrame(() => {
+                    const prev = document.querySelector(`[data-node-index="${index - 1}"]`) as HTMLDivElement;
+                    if (prev) {
+                        placeCaretAtEnd(prev);
+                        updateFocusedIndex(index - 1);
+                    }
+                });
+            }    
+             else if (selection?.anchorOffset === 0) {
                 event.preventDefault();
-                removeNodeByIndex(index - 1);
-                updateFocusedIndex(index - 1);
-            }
+                const prev = document.querySelector(`[data-node-index="${index - 1}"]`) as HTMLDivElement;
+                const prevText = prev?.textContent || "";
+            
+                const currentText = target.textContent || "";
+            
+                // Merge text content
+                if (prev) {
+                    const boundaryIndex = prevText.length;
+
+                    const mergedText = prevText + currentText;
+            
+                    prev.textContent = mergedText;
+                    changeNodeValue(index - 1, mergedText);
+                    removeNodeByIndex(index);
+            
+                    // Focus and place caret at end of merged text
+                    requestAnimationFrame(() => {
+                        // Set caret at the *end of the original first line*
+                        const range = document.createRange();
+                        range.setStart(prev.firstChild || prev, boundaryIndex);
+                        range.collapse(true);
+            
+                        const selection = window.getSelection();
+                        if (selection) {
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
+            
+                        updateFocusedIndex(index - 1);
+                    });
+                }}
         }
 
     };
@@ -84,6 +163,7 @@ export const BasicNode = ({
         onInput={handleInput}
         onKeyDown={onKeyDown}
         ref={nodeRef} contentEditable
+        data-node-index={index}
         suppressContentEditableWarning
         className={cx(styles.node, styles[node.type])}></div>
         </>
