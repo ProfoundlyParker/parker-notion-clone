@@ -5,10 +5,11 @@ import styles from "../utils.module.css";
 
 type FileImageProps = {
     filePath: string;
+	onLoad?: () => void;
 } & React.ImgHTMLAttributes<HTMLImageElement>
 
 export const FileImage = forwardRef<HTMLImageElement, FileImageProps>(
-    ({ filePath, ...props }, ref) => {
+    ({ filePath, onLoad, ...props }, ref) => {
     const [image, setImage] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -43,6 +44,8 @@ export const FileImage = forwardRef<HTMLImageElement, FileImageProps>(
         </div>
     }
 
-    return image ? <img src={image} alt={filePath} ref={ref} {...props} /> : null;
+    return image ? (
+        <img src={image} alt={filePath} ref={ref} onLoad={onLoad} {...props} />
+    ) : null;
     }
 );

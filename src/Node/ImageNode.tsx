@@ -7,12 +7,43 @@ import { FileImage } from "../components/FileImage";
 import { uploadImage } from "../utils/uploadImage";
 import { Loader } from "../components/Loader";
 import { supabase } from "../supabaseClient";
+import { ResizableBox } from "react-resizable";
+import "react-resizable/css/styles.css";
+import { usePageId } from "../Page/PageIdContext";
 
 
 type ImageNodeProps = {
     node: NodeData;
     isFocused: boolean;
     index: number;
+};
+
+const updateNodeSizeInPage = async (pageId: string, nodeId: string, newWidth: number, newHeight: number) => {
+    const { data, error } = await supabase
+        .from("pages")
+        .select("nodes")
+        .eq("id", pageId)
+        .single();
+
+    if (error || !data) {
+        console.error("Error fetching page nodes:", error);
+        return;
+    }
+
+    const nodes: NodeData[] = data.nodes;
+
+    const updatedNodes = nodes.map((n) =>
+        n.id === nodeId ? { ...n, width: newWidth, height: newHeight } : n
+    );
+
+    const { error: updateError } = await supabase
+        .from("pages")
+        .update({ nodes: updatedNodes })
+        .eq("id", pageId);
+
+    if (updateError) {
+        console.error("Error updating node size:", updateError);
+    }
 };
 
 const updateNodeCaptionInDatabase = async (nodeId: string, caption: string) => {
@@ -32,11 +63,14 @@ const updateNodeCaptionInDatabase = async (nodeId: string, caption: string) => {
 
 
 export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
+    const pageId = usePageId();
     const { removeNodeByIndex, changeNodeValue, changeNodeType } = useAppState();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [imagePath, setImagePath] = useState(node.value);
-    const [caption, setCaption] = useState(node.caption || ""); // Assuming node has a caption field
+    const [width, setWidth] = useState(node.width || 300);
+    const [height, setHeight] = useState(node.height || 200);
+    const [caption, setCaption] = useState(node.caption || "");
     const [isCaptionEditing, setIsCaptionEditing] = useState(false);
     
     const onImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -130,14 +164,35 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
             <div className={styles.imageContainer}>
             {imagePath ? (
                     <>
-                        <FileImage filePath={imagePath} />
+                 <ResizableBox
+                    width={width}
+                    height={height}
+                    lockAspectRatio
+                    resizeHandles={["w", "e"]}
+                    minConstraints={[100, 100]}
+                    maxConstraints={[1000, 800]}
+                    onResizeStop={async (e, data) => {
+                        const newWidth = data.size.width;
+                        const newHeight = data.size.height;
+                        setWidth(newWidth);
+                        setHeight(newHeight);
+                        await updateNodeSizeInPage(pageId, node.id, newWidth, newHeight);
+                    }}
+                    >
+                    <div className={styles.imageWrapper}>
+                        <FileImage
+                        filePath={imagePath}
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        />
                         <div className={styles.buttonContainer}>
-                            <button onClick={handleDeleteImage} className={styles.button}>Delete</button>
-                            <button onClick={handleReplaceImage} className={styles.button}>Replace</button>
-                            <button onClick={toggleCaptionEdit} className={styles.button}>
-                                {isCaptionEditing ? "Save" : "Edit Caption"}
-                            </button>
+                        <button onClick={handleDeleteImage} className={styles.button}>Delete</button>
+                        <button onClick={handleReplaceImage} className={styles.button}>Replace</button>
+                        <button onClick={toggleCaptionEdit} className={styles.button}>
+                            {isCaptionEditing ? "Save" : "Edit Caption"}
+                        </button>
                         </div>
+                    </div>
+                    </ResizableBox>
                         {loading && <Loader />}
                         {isCaptionEditing ? (
                             <input
@@ -169,77 +224,3 @@ export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
         </div>
     )
 }
-
-
-// type ImageNodeProps = {
-//     node: NodeData;
-//     isFocused: boolean;
-//     index: number;
-// }
-
-// export const ImageNode = ({ node, isFocused, index }: ImageNodeProps) => {
-//     const { removeNodeByIndex, changeNodeValue, changeNodeType } = useAppState();
-//     const fileInputRef = useRef<HTMLInputElement>(null);
-    
-//     useEffect(() => {
-//         if ((!node.value || node.value.length === 0) && !fileInputRef.current?.value) {
-//             fileInputRef.current?.click();
-//         } 
-//     }, [node.value])
-
-//     useEffect(() => {
-//         const handleKeyDown = (event: KeyboardEvent) => {
-//             event.preventDefault();
-//             if (event.key === "Backspace") {
-//                 removeNodeByIndex(index);
-//             }
-//             if (event.key === "Enter") {
-//                 fileInputRef.current?.click();
-//             }
-//         };
-//         if (isFocused) {
-//             window.addEventListener("keydown", handleKeyDown);
-//         } else {
-//             window.removeEventListener("keydown", handleKeyDown);
-//         }
-        
-//         return () => {
-//             window.removeEventListener("keydown", handleKeyDown);
-//         };
-//     }, [isFocused, removeNodeByIndex, index, node])
-
-//     const onImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-//         const target = event.target;
-//         const file = target.files?.[0];
-
-//         if (!file) {
-//             changeNodeValue(index, "");
-//             return;
-//         }
-    
-//         try {
-//             const result = await uploadImage(file);
-//             if (result?.filePath) {
-//                 changeNodeValue(index, result.filePath);
-//             }
-//         }
-//         catch (error) {
-//             changeNodeType(index, "text")
-//         } finally {
-//             if (fileInputRef.current) {
-//                 fileInputRef.current.value = "";
-//             }
-//         }
-//     }
-
-//     return (
-//         <div className={cx(styles.node, styles.image, {
-//             [styles.focused]: isFocused
-//         })}>
-//             <>
-//                 <FileImage filePath={node.value} />
-//                 <input type="file" ref={fileInputRef} onChange={onImageUpload} style={{ display: "none" }} accept="image/*" />
-//             </>
-//         </div>
-//     )
-// }
