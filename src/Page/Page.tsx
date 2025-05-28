@@ -13,6 +13,7 @@ import { supabase } from "../supabaseClient";
 import styles from './Page.module.css';
 import { useEffect, useRef, useState } from "react";
 import { NodeData } from "../utils/types";
+import { PageIdContext } from "./PageIdContext";
 
 type PageNodeProps = {
     node?: NodeData;
@@ -21,6 +22,7 @@ type PageNodeProps = {
 export const Page = ({ node }: PageNodeProps) => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
+    const [numericId, setNumericId] = useState<number | null>(null);
     const {title, nodes, addNode, cover, setCoverImage, reorderNodes, setTitle} = useAppState();
     const [focusedNodeIndex, setFocusedNodeIndex] = useFocusedNodeIndex({ nodes });
     const [emoji, setEmoji] = useState("📃");
@@ -31,9 +33,36 @@ export const Page = ({ node }: PageNodeProps) => {
         navigate(-1);
     }; 
 
+    const fetchPageId = async () => {
+        const slug = node?.value || id || "start";
+
+        try {
+            const { data, error } = await supabase
+                .from('pages')
+                .select('id')
+                .eq('slug', slug)
+                .single();
+
+            if (error) {
+                console.error('Error fetching page data:', error);
+                return;
+            }
+
+            // If data is returned, set the numeric ID
+            if (data?.id) {
+                setNumericId(data.id);  // Assuming 'id' is an integer in your table
+            }
+        } catch (err) {
+            console.error('Unexpected error:', err);
+        }
+        
+        console.log(slug, id);
+    };
+
     useEffect(() => {
+        fetchPageId();
         const fetchPageData = async () => {
-            const slug = node?.value || id;
+            const slug = node?.value || id || "start";
             if (!slug) {
                 return;
             }
@@ -143,7 +172,8 @@ export const Page = ({ node }: PageNodeProps) => {
         {id && (
                 <button onClick={handleBackClick} className={styles.backButton}>Previous Page</button>
             )}
-        <Cover filePath={cover} changePageCover={setCoverImage} />
+        <Cover filePath={cover} changePageCover={setCoverImage} pageId={numericId} />
+        <PageIdContext.Provider value={numericId?.toString()}>
         {id && (
             <div className={styles.pageHeader}>
                     <span onClick={handleEmojiIconClick} className={styles.emoji}>
@@ -183,6 +213,7 @@ export const Page = ({ node }: PageNodeProps) => {
                     }}
                 />
         </div>
+        </PageIdContext.Provider>
         </>
     )
 }

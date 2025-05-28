@@ -1,6 +1,6 @@
 .cover {
 	position: relative;
-	max-height: 295px;
+	max-height: 23rem;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -28,10 +28,11 @@
 
 .image {
 	width: 100%;
-	max-height: 295px;
+	max-height: none;
 	object-fit: cover;
 	cursor: grab;
 	position: relative;
+	user-select: none;
 }
 
 .imageContainer {
@@ -61,4 +62,42 @@
 
 .dragging {
     cursor: grabbing;
+}
+
+.repositionButton {
+	position: absolute;
+	bottom: 20px;
+	right: 15rem;
+	padding: 6px;
+	background: white;
+	border: 2px solid #888;
+	border-radius: 4px;
+	color: #6f6f6f;
+	font-weight: bold;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+	z-index: 5;
+}
+
+.cover:hover .repositionButton {
+	opacity: 1;
+}
+
+.repositionControls {
+	position: absolute;
+	bottom: 20px;
+	right: 15rem;
+	display: flex;
+	gap: 8px;
+}
+
+.repositionControls button {
+	background: white;
+	border: 2px solid #888;
+	border-radius: 4px;
+	color: #6f6f6f;
+	font-weight: bold;
+	padding: 6px;
+	cursor: pointer;
 }

@@ -6,6 +6,7 @@ import { supabase } from "../supabaseClient";
 import cx from "classnames";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import styles from "./Node.module.css";
+import { FileImage } from "../components/FileImage";
 
 type PageNodeProps = {
     node: NodeData;
@@ -18,6 +19,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
     const [ pageTitle , setPageTitle ] = useState("");
     const { removeNodeByIndex } = useAppState();
     const [emoji, setEmoji] = useState("📃");
+    const [cover, setCover] = useState<string | null>(null);
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -46,12 +48,13 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
         const fetchPageData = async () => {
             const { data } = await supabase
                 .from("pages")
-                .select("title, emoji")
+                .select("title, emoji, cover")
                 .eq("slug", node.value)
                 .single();
             if (data) {
                 setPageTitle(data?.title);
                 setEmoji(data?.emoji || "📃");
+                setCover(data?.cover);
             }
         }
        fetchPageData();
@@ -98,6 +101,24 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
         }
     };
 
+    const handleDeleteClick = async (e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (!node.value) return;
+
+            // Delete from Supabase
+            const { error } = await supabase
+                .from("pages")
+                .delete()
+                .eq("slug", node.value);
+
+            if (error) {
+                alert("Failed to delete page.");
+                return;
+            }
+
+            removeNodeByIndex(index);
+        };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
@@ -116,6 +137,23 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
         <div className={cx(styles.node, styles.page, {
             [styles.focused]: isFocused
         })}>
+                {cover ? (
+                    <div className={styles.pageCover} onClick={handlePageClick}>
+                    <FileImage
+                        filePath={cover}
+                        alt="Cover image"
+                        className="pageCoverImg"
+                    />
+                    </div>
+                ) : (
+                    <div className={styles.pageCover} onClick={handlePageClick}>
+                    <img
+                        src="./src/Page/Cover Image.png"
+                        alt="Default cover"
+                        className="pageCoverImg"
+                    />
+                    </div>
+                )}
             <div className={styles.pageContent} onClick={handlePageClick}>
                 <span onClick={handleEmojiIconClick} className={styles.emoji}>
                     {emoji}
@@ -126,6 +164,17 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
                     </div>
                 )}
                 <span className={styles.pageTitle} onChange={handleTitleChange}>{pageTitle}</span>
+                <button className={styles.deleteButton} onClick={handleDeleteClick} title="Delete this page">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M9 3v1H4v2h1v13a2 2 0 002 2h10a2 2 0 002-2V6h1V4h-5V3H9zm2 2h2v1h-2V5zM7 8h2v10H7V8zm4 0h2v10h-2V8zm4 0h2v10h-2V8z" />
+                    </svg>
+                </button>
             </div>
         </div>
     )

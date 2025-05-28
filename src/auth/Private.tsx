@@ -1,17 +1,17 @@
-import { ReactElement } from "react"
+import { ReactNode } from "react"
 import { useAuthSession } from "./AuthSessionContext";
 import { Navigate } from "react-router-dom";
 
 type PrivateProps = {
-    component: ReactElement;
+    children: ReactNode;
 }
 
-export const Private = ({ component }: PrivateProps) => {
+export const Private = ({ children }: PrivateProps) => {
     const { session, loading } = useAuthSession();
-
+  
     if (loading) {
-       return <>Authenticating...</>
+      return <>Authenticating...</>;
     }
-
-    return session ? component : <Navigate to="/auth" />
-}
+  
+    return session ? <>{children}</> : <Navigate to="/auth" replace />;
+  };

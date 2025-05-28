@@ -71,7 +71,6 @@ export const usePageState = (initialState: Page) => {
             .from("pages")
             .update({ emoji })
             .eq("id", nodeId);
-        console.log(emoji + nodeId);
         if (error) {
             console.error("Error updating emoji:", error);
         }
@@ -93,14 +92,12 @@ export const usePageState = (initialState: Page) => {
     };
 
     const updateNodeCaptionInDatabase = async (nodeId: string, caption: string) => {
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from("pages")
             .update({ caption })
             .eq("id", nodeId);
             if (error) {
                 console.error("Error updating caption:", error.message, error.details);
-            } else {
-                console.log("Caption updated successfully:", data);
             }
     };
 

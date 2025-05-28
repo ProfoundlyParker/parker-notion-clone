@@ -11,18 +11,18 @@ function App() {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/:id" element={
-        <Private component={
-          <AppStateProvider >
-          <Page />
-        </AppStateProvider>
-        } />
+        <Private>
+          <AppStateProvider>
+            <Page />
+          </AppStateProvider>
+        </Private>
       } />
       <Route path="/" element={
-        <Private component={
-        <AppStateProvider >
-          <Page />
-        </AppStateProvider>
-        } />
+        <Private>
+          <AppStateProvider>
+            <Page />
+          </AppStateProvider>
+        </Private>
       } />
     </Routes>
     </>

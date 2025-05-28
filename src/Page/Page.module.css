@@ -28,18 +28,46 @@
     background-color: #3b4754;
 }
 
-.emoji {
-	position: absolute;
-	left: 2rem;
-	transform: translateY(-55%);
-    font-size: 3rem;
-    margin-right: 10px;
+.signOutButton {
+    display: flex;
+    place-self: flex-end;
+    margin: 1rem;
+    padding: 0.5rem 1.5rem;
+    background: #e53935;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
     cursor: pointer;
+    transition: background 0.2s;
+}
+
+.signOutButton:hover {
+    background: #b71c1c;
+}
+
+.coverWrapper {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.emoji {
+  position: absolute;
+  top: -2.5rem;
+  left: 1.5rem;
+  font-size: 3rem;
+  cursor: pointer;
+  z-index: 10;
 }
 
 .emojiPicker {
-    position: absolute;
-    z-index: 1000;
-    top: 50px;
-    left: 50px;
+  position: absolute;
+  top: 2rem;
+  left: 0.5rem;
+  z-index: 1000;
+}
+
+.pageHeader {
+    position: relative;
 }

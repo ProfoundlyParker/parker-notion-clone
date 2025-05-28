@@ -6,6 +6,8 @@ export type NodeData = {
   value: string;
   caption?: string;
   emoji?: string;
+  width?: number;
+  height?: number;
 }
 
 export type Page = {
