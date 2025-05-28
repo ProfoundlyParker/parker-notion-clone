@@ -8,7 +8,6 @@ import { uploadImage } from "../utils/uploadImage";
 import { Loader } from "../components/Loader";
 import { supabase } from "../supabaseClient";
 import { Resizable } from "re-resizable";
-import "react-resizable/css/styles.css";
 import { usePageId } from "../Page/PageIdContext";
 
 
