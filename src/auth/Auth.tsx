@@ -3,6 +3,8 @@ import { useAuthSession } from "./AuthSessionContext";
 import { Navigate } from "react-router-dom";
 import styles from "../utils.module.css";
 import { supabase } from "../supabaseClient";
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
 
 type SignInErrorProps = {
     message: string;
@@ -13,6 +15,7 @@ export const Auth = () => {
     const [ email, setEmail ] = useState("");
     const { session } = useAuthSession();
     const [ error, setError ] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
 
     const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -20,12 +23,17 @@ export const Auth = () => {
 
         try {
             setLoading(true);
+            setSuccess(false);
             const { error } = await supabase.auth.signInWithOtp({ email });
 
             if (error) {
                 throw new Error(error.message);
             }
-            alert("Check your email for the login link");
+            setSuccess(true);
+             setTimeout(() => {
+                setSuccess(false);
+                setEmail("");
+            }, 4000);
         } catch (error) {
             if (typeof error === 'string') {
                 setError(error);
@@ -43,26 +51,38 @@ export const Auth = () => {
     }
 
     return (
-        <div className={styles.centeredFlex}>
-            <div>
-                <h1>Parker's Notion Clone</h1>
-                <p>Sign in via login link with your email below</p>
-                {error && <p>{error}</p>}
-                {loading ? ("Sending login link...") : (
-                    <form onSubmit={handleLogin}>
-                        <label htmlFor="email">Email: </label>
-                        <input type="email" 
-                        id="email" 
+        <div className={styles.wrapper}>
+            <form
+                onSubmit={handleLogin}
+                className={`${styles.login} ${loading ? styles.loading : ""} ${success ? styles.ok : ""}`}
+            >
+                <h1 className={styles.title}>Noted 📝</h1>
+                <p className={styles.p}>Enter your email address below and you'll be sent a login link</p>
+                <div className={styles.inputGroup}>
+                    <input
+                        type="email"
+                        id="email"
                         value={email}
                         placeholder="Your email"
-                        onChange={e => setEmail(e.target.value)}></input>
-                        <button>
-                            Send login link
-                        </button>
-                    </form>
-                )}
-            </div>
+                        className={styles.input}
+                        onChange={e => setEmail(e.target.value)}
+                        required
+                        autoFocus
+                    />
+                    <i className="fa fa-user" aria-hidden="true"></i>
+                </div>
+
+                {error && <p className={styles.error}>{error}</p>}
+
+                <button className={styles.button} type="submit" disabled={loading}>
+                    <span className={styles.spinner}></span>
+                    <span className={styles.state}>
+                        {loading ? "Sending..." : success ? "Check your email!" : "Send login link"}
+                    </span>
+                </button>
+            </form>
         </div>
-    )
+    );
+
 
 }

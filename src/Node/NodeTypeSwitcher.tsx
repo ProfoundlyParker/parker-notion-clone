@@ -34,7 +34,7 @@ export const NodeTypeSwitcher = ({
     }
 
     if (node.type === "image") {
-        return <ImageNode node={node} index={index} isFocused={isFocused} />
+        return <ImageNode node={node} index={index} />
     }
     return null;
 }

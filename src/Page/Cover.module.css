@@ -1,6 +1,6 @@
 .cover {
 	position: relative;
-	max-height: 295px;
+	max-height: 23rem;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -87,7 +87,7 @@
 .repositionControls {
 	position: absolute;
 	bottom: 20px;
-	left: 20px;
+	right: 15rem;
 	display: flex;
 	gap: 8px;
 }
