@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { NodeData } from "../utils/types";
 import { NodeTypeSwitcher } from "./NodeTypeSwitcher";
 import styles from "./NodeContainer.module.css";
+import { useRef } from "react";
 
 type NodeContainerProps = {
     node: NodeData;
@@ -21,12 +22,24 @@ export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex }: No
         transition,
     }
 
+     const nodeSwitcherRef = useRef<HTMLDivElement>(null);
+
+    // When the container is clicked, update focus and focus the input inside NodeTypeSwitcher
+    const handleContainerClick = (e: React.MouseEvent) => {
+        // Prevent drag handle from triggering focus
+        if ((e.target as HTMLElement).closest(`.${styles.dragHandle}`)) return;
+        updateFocusedIndex(index);
+        // Try to focus the first input or textarea inside NodeTypeSwitcher
+        nodeSwitcherRef.current?.querySelector("input,textarea")?.focus();
+    };
+
     return (
         <div 
         ref={setNodeRef}
         style={style}
         className={styles.container}
         {...attributes}
+        onClick={handleContainerClick}
         >
            <div {...listeners} className={styles.dragHandle}>
              ⠿

@@ -1,6 +1,8 @@
 .cover {
 	position: relative;
+	height: 23rem;
 	max-height: 23rem;
+	width: 100%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -27,12 +29,12 @@
 }
 
 .image {
-	width: 100%;
-	max-height: none;
-	object-fit: cover;
-	cursor: grab;
-	position: relative;
-	user-select: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    user-select: none;
+    cursor: grab;
 }
 
 .imageContainer {

@@ -134,15 +134,13 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
     }, []);
 
     return (
-        <div className={cx(styles.node, styles.page, {
-            [styles.focused]: isFocused
-        })}>
+        <div className={cx(styles.node, styles.page)}>
                 {cover ? (
                     <div className={styles.pageCover} onClick={handlePageClick}>
                     <FileImage
                         filePath={cover}
                         alt="Cover image"
-                        className="pageCoverImg"
+                        className={styles.pageCoverImg}
                     />
                     </div>
                 ) : (
@@ -150,7 +148,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
                     <img
                         src="./src/Page/Cover Image.png"
                         alt="Default cover"
-                        className="pageCoverImg"
+                        className={styles.pageCoverImg}
                     />
                     </div>
                 )}

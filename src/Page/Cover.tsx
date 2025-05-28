@@ -22,15 +22,6 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
     const [imageHeight, setImageHeight] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
 
-    useEffect(() => {
-        if (imageRef.current && containerRef.current) {
-            const imageHeight = imageRef.current.offsetHeight;
-            const containerHeight = containerRef.current.offsetHeight;
-            setImageHeight(imageHeight);
-            setContainerHeight(containerHeight);
-        }
-    }, [filePath, isRepositioning]);
-
     const onMouseDown = (e: React.MouseEvent) => {
 		if (!isRepositioning) return;
         e.preventDefault();
@@ -40,24 +31,20 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
 
     const onMouseMove = (e: MouseEvent) => {
         if (!dragging || startYRef.current === null) return;
+
         const deltaY = e.clientY - startYRef.current;
-        
-        setTempOffsetY((prev) => {
-            let newOffset = prev + deltaY;
-        
-            if (imageHeight > containerHeight) {
-                const minOffset = containerHeight - imageHeight;
-                const maxOffset = 0;
-                newOffset = Math.max(Math.min(newOffset, maxOffset), minOffset);
-            } else {
-                newOffset = 0; // Prevent dragging if image is too short
-            }
-        
-            return newOffset;
+        startYRef.current = e.clientY;
+
+       setTempOffsetY((prev) => {
+            const tentative = prev + deltaY;
+
+            const minOffset = Math.min(0, containerHeight - imageHeight); // allow full top
+            const maxOffset = 0; // don't let image go down further than container top
+
+            return Math.max(minOffset, Math.min(tentative, maxOffset));
         });
 
-        startYRef.current = e.clientY;
-    };      
+    };
 
 	const onMouseUp = () => {
         if (imageHeight > containerHeight) {
@@ -113,8 +100,10 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
 
     const onImageLoad = () => {
         if (imageRef.current && containerRef.current) {
-            setImageHeight(imageRef.current.offsetHeight);
-            setContainerHeight(containerRef.current.offsetHeight);
+            const imgHeight = imageRef.current.offsetHeight;
+            const contHeight = containerRef.current.offsetHeight;
+            setImageHeight(imgHeight);
+            setContainerHeight(contHeight);
         }
     };    
 
@@ -146,10 +135,15 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         }
     }
 
-    const startReposition = () => {
-		setTempOffsetY(offsetY);
-		setIsRepositioning(true);
-	};
+   const startReposition = () => {
+        if (!imageRef.current || !containerRef.current) return;
+        setImageHeight(imageRef.current.offsetHeight);
+        setContainerHeight(containerRef.current.offsetHeight);
+
+        setTempOffsetY(offsetY);
+        setIsRepositioning(true);
+    };
+
 
 	const cancelReposition = () => {
 		setIsRepositioning(false);
@@ -157,12 +151,9 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
 
     const saveReposition = async () => {
         let clamped = tempOffsetY;
-        if (imageHeight > containerHeight) {
-            const minOffset = containerHeight - imageHeight;
-            clamped = Math.min(Math.max(tempOffsetY, minOffset), 0);
-        } else {
-            clamped = 0;
-        }
+        const minOffset = Math.min(0, containerHeight - imageHeight);
+        clamped = Math.max(minOffset, Math.min(clamped, 0));
+
     
         setOffsetY(clamped);
         setTempOffsetY(clamped);
@@ -177,6 +168,14 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
             console.error("Failed to save cover offset:", error);
         }
     };    
+
+    useEffect(() => {
+        if (imageRef.current && containerRef.current) {
+            setImageHeight(imageRef.current.offsetHeight);
+            setContainerHeight(containerRef.current.offsetHeight);
+        }
+    }, [filePath]);
+
 
     return (
         <div className={styles.cover} ref={containerRef}>
