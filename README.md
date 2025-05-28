@@ -1,6 +1,6 @@
 Noted is a Notion-style collaborative editor that allows users to create, edit, and organize rich content pages. It's powered by **Supabase** as the backend (for auth, storage, and database), and built with **React** on the frontend. Users can sign in passwordlessly, edit blocks, reorder content via drag-and-drop, and customize pages with emojis, cover images, and resizable images w/ captions.
 
-<video width="320" height="240" controls><source src="readme-imgs/noted-video.mp4" type="video/mp4"></video>
+<p>Please click <a href="https://parkerramey.super.site/projects/noted">here</a> to view a video preview</p>
 
 This project is currently a work in progress. They key features can be seen below, as well as some possible future improvements
 
