@@ -10,23 +10,22 @@ export const createPage = async () => {
 	const slug = nanoid();
 
 	const page = {
-		id: undefined,
-		title: "Untitled",
+		title: "Untitled Page",
 		slug,
 		nodes: [],
 		created_by: user.id,
-		emoji: "",
-		caption: "",
+		emoji: ""
 	};
 
-	await supabase.from("pages").insert(page);
-	const { data: pageData } = await supabase
-		.from("pages")
-		.select("id")
-		.match({ slug, created_by: user.id })
-		.single();
+	const { data: insertedPages, error: insertError } = await supabase
+        .from("pages")
+        .insert(page)
+        .select("id, slug, title, nodes, created_by, emoji")
+        .single();
 
-	page.id = pageData?.id;
+    if (insertError) {
+        throw insertError;
+    }
 
-	return page;
+    return insertedPages;
 };

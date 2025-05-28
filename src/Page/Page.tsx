@@ -55,8 +55,6 @@ export const Page = ({ node }: PageNodeProps) => {
         } catch (err) {
             console.error('Unexpected error:', err);
         }
-        
-        console.log(slug, id);
     };
 
     useEffect(() => {
@@ -83,7 +81,7 @@ export const Page = ({ node }: PageNodeProps) => {
                 }
     
                 if (data) {
-                    setTitle(data.title);
+                    setTitle(data.title || "Untitled Page");
                     setEmoji(data.emoji || "📃");
                 }
             } catch (err) {
@@ -100,7 +98,7 @@ export const Page = ({ node }: PageNodeProps) => {
         setEmoji(selectedEmoji);
         setShowPicker(false);
     
-        const slug = node?.value || id;
+        const slug = node?.value || id || "start";
         if (selectedEmoji && slug) {
             const { error } = await supabase
                 .from("pages")
@@ -154,7 +152,7 @@ export const Page = ({ node }: PageNodeProps) => {
 
     const handleTitleChange = async (newTitle: string) => {
         setTitle(newTitle);
-        const slug = node?.value || id;
+        const slug = node?.value || id || "start";
         if (slug) {
             const { error } = await supabase
                 .from("pages")
@@ -172,9 +170,9 @@ export const Page = ({ node }: PageNodeProps) => {
         {id && (
                 <button onClick={handleBackClick} className={styles.backButton}>Previous Page</button>
             )}
-        <Cover filePath={cover} changePageCover={setCoverImage} pageId={numericId} />
         <PageIdContext.Provider value={numericId?.toString()}>
-        {id && (
+            <div className={styles.coverWrapper}>
+            <Cover filePath={cover} changePageCover={setCoverImage} pageId={numericId} />
             <div className={styles.pageHeader}>
                     <span onClick={handleEmojiIconClick} className={styles.emoji}>
                         {emoji}
@@ -188,22 +186,33 @@ export const Page = ({ node }: PageNodeProps) => {
                             <EmojiPicker onEmojiClick={handleEmojiClick} />
                         </div>
                     )}
-                </div>
-            )}
+                    </div>
+                 <button
+                className={styles.signOutButton}
+                onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate("/auth");
+                }}
+            >
+                Sign Out
+            </button>
+            </div>
             <div>
                <Title addNode={addNode} title={title} changePageTitle={handleTitleChange} />
                 <DndContext onDragEnd={handleDragEvent}>
+                  {Array.isArray(nodes) && nodes.length > 0 && (
                     <SortableContext items={nodes} strategy={verticalListSortingStrategy}>
                         {nodes.map((node, index) => (
-                            <NodeContainer
-                                key={node.id}
-                                node={node}
-                                isFocused={focusedNodeIndex === index}
-                                updateFocusedIndex={setFocusedNodeIndex}
-                                index={index}
-                            />
+                        <NodeContainer
+                            key={node.id}
+                            node={node}
+                            isFocused={focusedNodeIndex === index}
+                            updateFocusedIndex={setFocusedNodeIndex}
+                            index={index}
+                        />
                         ))}
                     </SortableContext>
+                    )}
                     <DragOverlay />
                 </DndContext>
                 <Spacer
