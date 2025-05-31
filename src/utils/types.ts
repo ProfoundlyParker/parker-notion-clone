@@ -1,4 +1,4 @@
-export type NodeType = "text" | "image" | "list" | "page" | "heading1" | "heading2" | "heading3"
+export type NodeType = "text" | "image" | "list" | "numberedList" | "page" | "heading1" | "heading2" | "heading3"
 
 export type NodeData = {
   id: string;

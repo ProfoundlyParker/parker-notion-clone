@@ -1,6 +1,7 @@
 import { NodeData, NodeType } from "../utils/types";
 import { BasicNode } from "./BasicNode";
 import { ImageNode } from "./ImageNode";
+import { NumberedListNode } from "./NumberedListNode";
 import { PageNode } from "./PageNode";
 
 type NodeTypeSwitcherProps = {
@@ -11,7 +12,7 @@ type NodeTypeSwitcherProps = {
 }
 
 const TEXT_NODE_TYPES: NodeType[] = [
-    "text", "list", "heading1", "heading2", "heading3"
+    "text", "list", "numberedList", "heading1", "heading2", "heading3"
 ]
 
 export const NodeTypeSwitcher = ({
@@ -20,6 +21,7 @@ export const NodeTypeSwitcher = ({
     index,
     updateFocusedIndex
 } : NodeTypeSwitcherProps) => {
+    
     if (TEXT_NODE_TYPES.includes(node.type)) {
         return <BasicNode 
         node={node} 
@@ -27,6 +29,17 @@ export const NodeTypeSwitcher = ({
         isFocused={isFocused} 
         updateFocusedIndex={updateFocusedIndex}
         />
+    }
+
+      if (node.type === "numberedList") {
+            return (
+                <NumberedListNode
+                    node={node}
+                    index={index}
+                    isFocused={isFocused}
+                    updateFocusedIndex={updateFocusedIndex}
+                />
+            );
     }
 
     if (node.type == "page") {

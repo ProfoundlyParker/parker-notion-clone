@@ -14,6 +14,7 @@ import styles from './Page.module.css';
 import { useEffect, useRef, useState } from "react";
 import { NodeData } from "../utils/types";
 import { PageIdContext } from "./PageIdContext";
+import { SortableNumberedListNode } from "../Node/SortableNumberedListNode";
 
 type PageNodeProps = {
     node?: NodeData;
@@ -28,6 +29,20 @@ export const Page = ({ node }: PageNodeProps) => {
     const [emoji, setEmoji] = useState("📃");
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+    const getUser = async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user?.id) {
+        setUserId(data.user.id);
+        } else {
+        console.error("User not found:", error);
+        }
+    };
+    getUser();
+    }, []);
 
     const handleBackClick = () => {
         navigate(-1);
@@ -41,6 +56,7 @@ export const Page = ({ node }: PageNodeProps) => {
                 .from('pages')
                 .select('id')
                 .eq('slug', slug)
+                .eq('created_by', userId) 
                 .single();
 
             if (error) {
@@ -58,18 +74,21 @@ export const Page = ({ node }: PageNodeProps) => {
     };
 
     useEffect(() => {
+        if (!userId) return;
         fetchPageId();
         const fetchPageData = async () => {
             const slug = node?.value || id || "start";
             if (!slug) {
                 return;
             }
+            const { data: user } = await supabase.auth.getUser();
     
             try {
                 const { data, error } = await supabase
                     .from("pages")
                     .select("emoji, title")
                     .eq("slug", slug)
+                    .eq("created_by", userId)
                     .single();
     
                 if (error && error.code === "PGRST116") {
@@ -90,7 +109,7 @@ export const Page = ({ node }: PageNodeProps) => {
         };
     
         fetchPageData();
-    }, [id, node?.value, setTitle]);
+    }, [id, node?.value, setTitle, userId]);
     
 
     const handleEmojiClick = async (emojiObject: EmojiClickData) => {
@@ -103,7 +122,8 @@ export const Page = ({ node }: PageNodeProps) => {
             const { error } = await supabase
                 .from("pages")
                 .update({ emoji: selectedEmoji })
-                .eq("slug", slug);
+                .eq("slug", slug)
+                .eq("created_by", userId);
     
             if (error) {
                 console.error("Error updating emoji:", error);
@@ -114,6 +134,7 @@ export const Page = ({ node }: PageNodeProps) => {
                 .from("pages")
                 .select("emoji, title")
                 .eq("slug", slug)
+                .eq("created_by", userId)
                 .single();
     
             if (data) {
@@ -150,20 +171,29 @@ export const Page = ({ node }: PageNodeProps) => {
         }
     }
 
-    const handleTitleChange = async (newTitle: string) => {
-        setTitle(newTitle);
-        const slug = node?.value || id || "start";
-        if (slug) {
+    const handleTitleChange = (newTitle: string) => {
+        setTitle(newTitle); 
+
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(async () => {
+            const slug = node?.value || id || "start";
+            if (!slug || !userId) return;
+
             const { error } = await supabase
                 .from("pages")
                 .update({ title: newTitle })
-                .eq("slug", slug);
-    
+                .eq("slug", slug)
+                .eq("created_by", userId);
+
             if (error) {
-                return;
+                console.error("Error saving title:", error);
             }
-        }
+        }, 500);
     };
+
 
     return (
         <>
@@ -202,15 +232,57 @@ export const Page = ({ node }: PageNodeProps) => {
                 <DndContext onDragEnd={handleDragEvent}>
                   {Array.isArray(nodes) && nodes.length > 0 && (
                     <SortableContext items={nodes} strategy={verticalListSortingStrategy}>
-                        {nodes.map((node, index) => (
-                        <NodeContainer
-                            key={node.id}
-                            node={node}
+                        {(() => {
+                    const grouped: (NodeData | NodeData[])[] = [];
+                    let currentGroup: NodeData[] = [];
+
+                    nodes.forEach((node) => {
+                        if (node.type === "numberedList") {
+                        currentGroup.push(node);
+                        } else {
+                        if (currentGroup.length > 0) {
+                            grouped.push([...currentGroup]);
+                            currentGroup = [];
+                        }
+                        grouped.push(node);
+                        }
+                    });
+
+                    if (currentGroup.length > 0) {
+                        grouped.push([...currentGroup]);
+                    }
+
+                    return grouped.map((group, groupIndex) => {
+                        if (Array.isArray(group)) {
+                        return (
+                            <ol key={`group-${groupIndex}`} style={{ paddingLeft: "4rem", margin: 0 }}>
+                            {group.map((node, indexInGroup) => (
+                                <li key={node.id} style={{ listStyleType: "decimal" }}>
+                                <SortableNumberedListNode
+                                    node={node}
+                                    index={nodes.findIndex(n => n.id === node.id)}
+                                    isFocused={focusedNodeIndex === nodes.findIndex(n => n.id === node.id)}
+                                    updateFocusedIndex={setFocusedNodeIndex}
+                                    />
+                                </li>
+                            ))}
+                            </ol>
+                        );
+                        } else {
+                        const index = nodes.findIndex(n => n.id === group.id);
+                        return (
+                            <NodeContainer
+                            key={group.id}
+                            node={group}
+                            index={index}
                             isFocused={focusedNodeIndex === index}
                             updateFocusedIndex={setFocusedNodeIndex}
-                            index={index}
-                        />
-                        ))}
+                            />
+                        );
+                        }
+                    });
+                    })()}
+
                     </SortableContext>
                     )}
                     <DragOverlay />
