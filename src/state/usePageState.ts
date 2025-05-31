@@ -4,9 +4,23 @@ import { useSyncedState } from "./useSyncedState";
 import { updatePage } from "../utils/updatePage";
 import { createPage } from "../utils/createPage";
 import { supabase } from "../supabaseClient";
+import { useEffect, useState } from "react";
 
 export const usePageState = (initialState: Page) => {
     const [page, setPage] = useSyncedState(initialState, updatePage);
+    const [userId, setUserId] = useState<string | null>(null);
+    
+        useEffect(() => {
+        const getUser = async () => {
+            const { data, error } = await supabase.auth.getUser();
+            if (data?.user?.id) {
+            setUserId(data.user.id);
+            } else {
+            console.error("User not found:", error);
+            }
+        };
+        getUser();
+        }, []);
 
     const addNode = (node: NodeData, index: number) => {
         setPage((draft) => {draft.nodes.splice(index, 0, node)}
@@ -70,7 +84,8 @@ export const usePageState = (initialState: Page) => {
         const { error } = await supabase
             .from("pages")
             .update({ emoji })
-            .eq("id", nodeId);
+            .eq("id", nodeId)
+            .eq("created_by", userId);
         if (error) {
             console.error("Error updating emoji:", error);
         }
@@ -95,7 +110,8 @@ export const usePageState = (initialState: Page) => {
         const { error } = await supabase
             .from("pages")
             .update({ caption })
-            .eq("id", nodeId);
+            .eq("id", nodeId)
+            .eq("created_by", userId);
             if (error) {
                 console.error("Error updating caption:", error.message, error.details);
             }

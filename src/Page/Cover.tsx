@@ -21,6 +21,19 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [imageHeight, setImageHeight] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+    const getUser = async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user?.id) {
+        setUserId(data.user.id);
+        } else {
+        console.error("User not found:", error);
+        }
+    };
+    getUser();
+    }, []);
 
     const onMouseDown = (e: React.MouseEvent) => {
 		if (!isRepositioning) return;
@@ -81,11 +94,13 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
     }, [dragging]);    
 
     useEffect(() => {
+        if (!pageId || !userId) return;
         const loadOffset = async () => {
             const { data, error } = await supabase
                 .from("pages")
                 .select("cover_offset_y")
                 .eq("id", pageId)
+                .eq("created_by", userId)
                 .single();
     
             if (error) {
@@ -96,7 +111,7 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         };
     
         loadOffset();
-    }, [pageId]);    
+    }, [pageId, userId]);    
 
     const onImageLoad = () => {
         if (imageRef.current && containerRef.current) {
@@ -128,7 +143,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
                 await supabase
 				.from("pages")
 				.update({ cover: result.filePath, cover_offset_y: 0 })
-				.eq("id", pageId);
+				.eq("id", pageId)
+                .eq("created_by", userId);
             }
         } catch (error) {
             console.log("Error uploading cover image:", error)
@@ -162,7 +178,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         const { error } = await supabase
             .from("pages")
             .update({ cover_offset_y: clamped })
-            .eq("id", pageId);
+            .eq("id", pageId)
+            .eq("created_by", userId);
     
         if (error) {
             console.error("Failed to save cover offset:", error);
