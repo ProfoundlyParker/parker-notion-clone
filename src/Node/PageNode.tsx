@@ -22,6 +22,19 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
     const [cover, setCover] = useState<string | null>(null);
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+    const getUser = async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user?.id) {
+        setUserId(data.user.id);
+        } else {
+        console.error("User not found:", error);
+        }
+    };
+    getUser();
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -45,11 +58,13 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
     }, [isFocused, removeNodeByIndex, index, navigate, node])
 
     useEffect(() => {
+        if (!userId) return;
         const fetchPageData = async () => {
             const { data } = await supabase
                 .from("pages")
                 .select("title, emoji, cover")
                 .eq("slug", node.value)
+                .eq("created_by", userId)
                 .single();
             if (data) {
                 setPageTitle(data?.title);
@@ -58,7 +73,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
             }
         }
        fetchPageData();
-    }, [node.type, node.value]);
+    }, [node.type, node.value, userId]);
 
     const handleEmojiClick = (emojiObject: EmojiClickData) => {
         const selectedEmoji = emojiObject.emoji;
@@ -109,7 +124,8 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
             const { error } = await supabase
                 .from("pages")
                 .delete()
-                .eq("slug", node.value);
+                .eq("slug", node.value)
+                .eq("created_by", userId);
 
             if (error) {
                 alert("Failed to delete page.");
