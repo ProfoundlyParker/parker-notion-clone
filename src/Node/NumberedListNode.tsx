@@ -1,23 +1,35 @@
 // components/NumberedListNode.tsx
-import { useRef, useEffect, FormEventHandler, KeyboardEventHandler } from "react";
+import { useRef, useEffect, FormEventHandler, KeyboardEventHandler, useState } from "react";
 import cx from "classnames";
-import { NodeData } from "../utils/types";
+import { NodeData, NodeType } from "../utils/types";
 import styles from "./Node.module.css";
 import { useAppState } from "../state/AppStateContext";
+import { CommandPanel } from "./CommandPanel";
 
 export const NumberedListNode = ({
     node,
     index,
     isFocused,
-    updateFocusedIndex
+    updateFocusedIndex,
+    registerRef
 }: {
     node: NodeData;
     index: number;
     isFocused: boolean;
     updateFocusedIndex: (index: number) => void;
+    registerRef?: (index: number, ref: HTMLDivElement) => void;
 }) => {
     const nodeRef = useRef<HTMLDivElement>(null);
-    const { changeNodeValue, removeNodeByIndex, addNode } = useAppState();
+    const { changeNodeValue, removeNodeByIndex, addNode, changeNodeType } = useAppState();
+    const showCommandPanel = isFocused && node?.value?.match(/^\//);
+    const [currentNodeType, setCurrentNodeType] = useState<NodeType>(node.type);
+    const [justChangedType, setJustChangedType] = useState(false);
+
+    useEffect(() => {
+            if (nodeRef.current && registerRef) {
+                registerRef(index, nodeRef.current);
+            }
+        }, [nodeRef.current, index, registerRef]);
 
     useEffect(() => {
         if (!nodeRef.current) return;
@@ -34,8 +46,8 @@ export const NumberedListNode = ({
         if (isFocused && document.activeElement !== editable) {
             editable.focus();
         }
-    }, [node.value, isFocused]);
-
+        setCurrentNodeType(node.type);
+    }, [node.value, isFocused, node.type]);
 
 
     const handleInput: FormEventHandler<HTMLDivElement> = ({ currentTarget }) => {
@@ -56,8 +68,15 @@ export const NumberedListNode = ({
             sel.removeAllRanges();
             sel.addRange(range);
         }
-    };    
+    };  
 
+       const parseCommand = (nodeType: NodeType) => {
+            if (nodeRef.current) {
+                changeNodeType(index, nodeType);
+                nodeRef.current.textContent = "";
+                setJustChangedType(true);
+            }
+        }
 
     const onKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
         const target = event.target as HTMLDivElement;
@@ -126,6 +145,11 @@ export const NumberedListNode = ({
 
         }
         if (event.key === "Enter") {
+            if (justChangedType) {
+                setJustChangedType(false);
+                return;
+            }
+            if (target.textContent?.[0] === "/") return;
                 event.preventDefault();
 
                 const selection = window.getSelection();
@@ -144,16 +168,65 @@ export const NumberedListNode = ({
                 }
 
                 // Add new node with text after cursor (if any)
-                addNode({ type: node.type, value: after, id: crypto.randomUUID() }, index + 1);
+                addNode({ type: currentNodeType, value: after, id: crypto.randomUUID() }, index + 1);
 
                 requestAnimationFrame(() => {
                     updateFocusedIndex(index + 1);
                 });
         }
+        if (event.key === "Delete") {
+            const selection = window.getSelection();
+            const caretPos = selection?.getRangeAt(0)?.startOffset ?? 0;
+            const currentText = target.textContent ?? "";
+
+            // If caret is at the end of this node
+            if (caretPos === currentText.length) {
+                event.preventDefault();
+
+                const nextNodeEl = document.querySelector(
+                    `[data-node-index="${index + 1}"] div[contenteditable]`
+                ) as HTMLDivElement;
+
+                if (nextNodeEl) {
+                    const nextText = nextNodeEl.textContent ?? "";
+
+                    // Merge text
+                    const merged = currentText + nextText;
+                    changeNodeValue(index, merged);
+                    removeNodeByIndex(index + 1);
+
+                    requestAnimationFrame(() => {
+                        const thisNode = document.querySelector(
+                            `[data-node-index="${index}"] div[contenteditable]`
+                        ) as HTMLDivElement;
+
+                        if (thisNode && thisNode.firstChild) {
+                            const range = document.createRange();
+                            const sel = window.getSelection();
+
+                            range.setStart(thisNode.firstChild, currentText.length);
+                            range.collapse(true);
+
+                            sel?.removeAllRanges();
+                            sel?.addRange(range);
+
+                            thisNode.focus();
+                        }
+                    });
+                }
+            }
+        }
+
 
     };
 
  return (
+    <>
+    {
+        showCommandPanel && (
+            <CommandPanel selectItem={parseCommand} nodeText={node.value} />
+        )
+    }
     <div
     className={cx(styles.node, styles.numberedList)}
     style={{ flex: 1 }}
@@ -161,7 +234,12 @@ export const NumberedListNode = ({
     onClick={handleClick}
     >
         <div
-            ref={nodeRef}
+            ref={(el) => {
+                nodeRef.current = el;
+                if (el && registerRef) {
+                    registerRef(index, el);
+                }
+            }}
             contentEditable
             suppressContentEditableWarning
             className={styles.editable}
@@ -176,5 +254,6 @@ export const NumberedListNode = ({
         >
         </div>
     </div>
+    </>
  )
 };

@@ -3,6 +3,7 @@ import { NodeType } from "../utils/types";
 import { useOverflowsScreenBottom } from "./useOverflowsScreenBottom";
 import styles from "./CommandPanel.module.css";
 import cx from "classnames";
+import { useAppState } from "../state/AppStateContext";
 
 type CommandPanelProps = {
     nodeText: string;
@@ -28,6 +29,13 @@ const supportedNodeTypes: SupportedNodeType[] = [
 export const CommandPanel = ({ selectItem, nodeText }: CommandPanelProps) => {
     const [selectedItemIndex, setSelectedItemIndex] = useState(0);
     const { overflows, ref } = useOverflowsScreenBottom();
+    const { setIsCommandPanelOpen } = useAppState();
+    useEffect(() => {
+        setIsCommandPanelOpen(true);
+        return () => {
+            setIsCommandPanelOpen(false);
+        };
+    }, [setIsCommandPanelOpen]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {

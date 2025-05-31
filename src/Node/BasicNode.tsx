@@ -151,6 +151,51 @@ export const BasicNode = ({
                 }}
         }
 
+        if (event.key === "Delete") {
+            const selection = window.getSelection();
+            const caretPos = selection?.getRangeAt(0)?.startOffset ?? 0;
+            const currentText = target.textContent ?? "";
+
+            // Only proceed if caret is at end
+            if (caretPos === currentText.length) {
+                const nextNodeEl = document.querySelector(
+                    `[data-node-index="${index + 1}"]`
+                ) as HTMLDivElement;
+
+                if (nextNodeEl) {
+                    event.preventDefault();
+
+                    const nextText = nextNodeEl.textContent ?? "";
+                    const merged = currentText + nextText;
+
+                    changeNodeValue(index, merged);
+                    removeNodeByIndex(index + 1);
+
+                    // Restore caret position after merge
+                    requestAnimationFrame(() => {
+                        const updatedEl = document.querySelector(
+                            `[data-node-index="${index}"]`
+                        ) as HTMLDivElement;
+
+                        if (updatedEl && updatedEl.firstChild) {
+                            const range = document.createRange();
+                            const sel = window.getSelection();
+
+                            range.setStart(updatedEl.firstChild, currentText.length);
+                            range.collapse(true);
+
+                            sel?.removeAllRanges();
+                            sel?.addRange(range);
+
+                            updatedEl.focus();
+                            updateFocusedIndex(index);
+                        }
+                    });
+                }
+            }
+        }
+
+
     };
     return (
         <>

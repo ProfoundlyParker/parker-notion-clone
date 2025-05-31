@@ -24,13 +24,22 @@ export const Page = ({ node }: PageNodeProps) => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [numericId, setNumericId] = useState<number | null>(null);
-    const {title, nodes, addNode, cover, setCoverImage, reorderNodes, setTitle} = useAppState();
+    const {title, nodes, addNode, cover, setCoverImage, reorderNodes, setTitle, isCommanPanelOpen} = useAppState();
     const [focusedNodeIndex, setFocusedNodeIndex] = useFocusedNodeIndex({ nodes });
     const [emoji, setEmoji] = useState("📃");
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const nodeRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+    const focusNode = (index: number) => {
+        const ref = nodeRefs.current.get(index);
+        if (ref) {
+            ref.focus();
+            setFocusedNodeIndex(index);
+        }
+    }
 
     useEffect(() => {
     const getUser = async () => {
@@ -110,6 +119,37 @@ export const Page = ({ node }: PageNodeProps) => {
     
         fetchPageData();
     }, [id, node?.value, setTitle, userId]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (isCommanPanelOpen) return;
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                if (focusedNodeIndex > 0) {
+                    focusNode(focusedNodeIndex - 1);
+                }
+            } else if (event.key === "ArrowDown") {
+                event.preventDefault();
+                if (focusedNodeIndex < nodes.length - 1) {
+                    focusNode(focusedNodeIndex + 1);
+                }
+            } else if (event.key === "Delete") {
+                const currentNode = nodeRefs.current.get(focusedNodeIndex);
+                const selection = window.getSelection();
+                const atEnd = currentNode && selection?.anchorOffset === (currentNode.textContent?.length || 0);
+
+                if (atEnd && focusedNodeIndex < nodes.length - 1) {
+                    event.preventDefault();
+                    // Replace this with your actual delete logic:
+                    console.log(`Would delete node at index ${focusedNodeIndex + 1}`);
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [focusedNodeIndex, nodes.length, isCommanPanelOpen]);
+
     
 
     const handleEmojiClick = async (emojiObject: EmojiClickData) => {
@@ -191,7 +231,7 @@ export const Page = ({ node }: PageNodeProps) => {
             if (error) {
                 console.error("Error saving title:", error);
             }
-        }, 500);
+        }, 200);
     };
 
 
@@ -263,6 +303,7 @@ export const Page = ({ node }: PageNodeProps) => {
                                     index={nodes.findIndex(n => n.id === node.id)}
                                     isFocused={focusedNodeIndex === nodes.findIndex(n => n.id === node.id)}
                                     updateFocusedIndex={setFocusedNodeIndex}
+                                    registerRef={(i, el) => nodeRefs.current.set(i, el)}
                                     />
                                 </li>
                             ))}
@@ -277,6 +318,7 @@ export const Page = ({ node }: PageNodeProps) => {
                             index={index}
                             isFocused={focusedNodeIndex === index}
                             updateFocusedIndex={setFocusedNodeIndex}
+                            registerRef={(i, el) => nodeRefs.current.set(i, el)}
                             />
                         );
                         }
