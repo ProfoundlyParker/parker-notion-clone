@@ -10,6 +10,7 @@ export const useFocusedNodeIndex = ({ nodes, commandPanelRef }: UseFocusedNodeIn
     const [ focusedNodeIndex, setFocusedNodeIndex ] = useState(0);
 
     useEffect(() => {
+        if (!nodes || !commandPanelRef) return;
         const onKeyDown = (event: KeyboardEvent)  => {
 
             const isCommandPanelFocused = commandPanelRef.current === document.activeElement;

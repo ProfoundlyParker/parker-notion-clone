@@ -10,12 +10,22 @@ type NodeContainerProps = {
     updateFocusedIndex(index: number): void;
     isFocused: boolean;
     index: number;
+    registerRef?: (index: number, ref: HTMLDivElement) => void;
 };
 
-export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex }: NodeContainerProps) => {
+export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex, registerRef }: NodeContainerProps) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
         id: node.id
     })
+    const nodeRef = useRef<HTMLDivElement>(null);
+     const combinedRef = (el: HTMLDivElement | null) => {
+        nodeRef.current = el;
+        setNodeRef(el);
+        if (el && registerRef) {
+            registerRef(index, el);
+        }
+    };
+
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -35,7 +45,7 @@ export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex }: No
 
     return (
         <div 
-        ref={setNodeRef}
+        ref={combinedRef}
         style={style}
         className={styles.container}
         {...attributes}

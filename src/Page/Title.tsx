@@ -25,6 +25,7 @@ export const Title = ({title, changePageTitle, addNode}: TitleProps) => {
         aria-placeholder="Title"
         suppressContentEditableWarning
         onInput={(e) => changePageTitle(e.currentTarget.textContent || "")}
+        onBlur={(e) => changePageTitle(e.currentTarget.textContent || "")}
         onKeyDown={(event) => {
             if(event.key === "Enter") {
                 event.preventDefault();

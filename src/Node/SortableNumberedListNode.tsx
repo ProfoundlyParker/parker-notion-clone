@@ -8,9 +8,10 @@ type Props = {
   index: number;
   isFocused: boolean;
   updateFocusedIndex: (index: number) => void;
+  registerRef?: (index: number, ref: HTMLLIElement) => void;
 };
 
-export const SortableNumberedListNode = ({ node, index, isFocused, updateFocusedIndex }: Props) => {
+export const SortableNumberedListNode = ({ node, index, isFocused, updateFocusedIndex, registerRef }: Props) => {
   const {
     attributes,
     setNodeRef,
@@ -33,6 +34,7 @@ export const SortableNumberedListNode = ({ node, index, isFocused, updateFocused
       minHeight: 32,
     }}
     {...attributes}
+    className={styles.listItem}
   >
     {/* Drag handle absolutely positioned */}
     <div className={styles.dragZone}>
@@ -56,6 +58,7 @@ export const SortableNumberedListNode = ({ node, index, isFocused, updateFocused
         index={index}
         isFocused={isFocused}
         updateFocusedIndex={updateFocusedIndex}
+        registerRef={registerRef}
       />
     </div>
   </li>
