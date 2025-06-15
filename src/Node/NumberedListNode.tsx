@@ -40,7 +40,7 @@ export const NumberedListNode = ({
             document.activeElement !== editable &&
             editable.textContent !== node.value
         ) {
-            editable.textContent = node.value || " ";
+            editable.textContent = node.value || "\u200B";
         }
         // Only focus if needed, but don't move caret!
         if (isFocused && document.activeElement !== editable) {
@@ -84,23 +84,71 @@ export const NumberedListNode = ({
           if (event.key === "Backspace") {
             const selection = window.getSelection();
             const caretPos = selection?.getRangeAt(0)?.startOffset || 0;
-            const text = (target.textContent || "")
+            const text = target.textContent || "";
 
-            // Case 1: If node is empty
+            // Check if all text is selected
+            const isAllSelected = (() => {
+                if (!selection || !selection.rangeCount || !target.firstChild) return false;
+
+                    const range = selection.getRangeAt(0);
+
+                    return (
+                        range.startContainer === target.firstChild &&
+                        range.endContainer === target.firstChild &&
+                        range.startOffset === 0 &&
+                        range.endOffset === text.length &&
+                        text.length > 0
+                    );
+                })();
+
+
+            // Case 1: All text is selected, delete node and value
+            if (isAllSelected) {
+                event.preventDefault();
+                removeNodeByIndex(index);
+                requestAnimationFrame(() => {
+                    const prevNode = document.querySelector(
+                        `[data-node-index="${index - 1}"] div[contenteditable]`
+                    ) as HTMLDivElement;
+                    if (prevNode) {
+                        prevNode.focus();
+                        // Optionally place caret at end
+                        const range = document.createRange();
+                        range.selectNodeContents(prevNode);
+                        range.collapse(false);
+                        const sel = window.getSelection();
+                        sel?.removeAllRanges();
+                        sel?.addRange(range);
+                        updateFocusedIndex(index - 1);
+                    }
+                });
+                return;
+            }
+
+            // Case 2: If node is empty
             if (text.length === 0) {
                 event.preventDefault();
                 removeNodeByIndex(index);
 
                 requestAnimationFrame(() => {
-                    const prevNode = document.querySelector(`[data-node-index="${index - 1}"] div[contenteditable]`) as HTMLDivElement;
+                    const prevNode = document.querySelector(
+                        `[data-node-index="${index - 1}"] div[contenteditable]`
+                    ) as HTMLDivElement;
                     if (prevNode) {
-                        placeCaretAtEnd(prevNode);
+                        prevNode.focus();
+                        const range = document.createRange();
+                        range.selectNodeContents(prevNode);
+                        range.collapse(false);
+                        const sel = window.getSelection();
+                        sel?.removeAllRanges();
+                        sel?.addRange(range);
                         updateFocusedIndex(index - 1);
                     }
                 });
+                return;
             }
 
-            // Case 2: Not empty, but caret is at the start
+            // Case 3: Not empty, but caret is at the start
             else if (caretPos === 0 && index > 0) {
                 event.preventDefault();
 
@@ -114,7 +162,6 @@ export const NumberedListNode = ({
                 changeNodeValue(index - 1, mergedText);
                 removeNodeByIndex(index);
 
-                // 👇 Place caret at end of prevText, not end of mergedText
                 const caretOffset = prevText.length;
 
                 requestAnimationFrame(() => {
@@ -127,7 +174,6 @@ export const NumberedListNode = ({
                             const range = document.createRange();
                             const sel = window.getSelection();
 
-                            // 👇 Use caretOffset to ensure correct placement
                             const textNode = updatedPrev.firstChild;
                             if (textNode) {
                                 range.setStart(textNode, Math.min(caretOffset, textNode.textContent?.length || 0));
@@ -141,8 +187,8 @@ export const NumberedListNode = ({
                         }
                     });
                 });
+                return;
             }
-
         }
         if (event.key === "Enter") {
             if (justChangedType) {
@@ -165,6 +211,7 @@ export const NumberedListNode = ({
                 // Update current node with text before cursor
             if (before !== node.value) {
                     changeNodeValue(index, before);
+                    target.textContent = before;
                 }
 
                 // Add new node with text after cursor (if any)
@@ -252,6 +299,7 @@ export const NumberedListNode = ({
             onKeyDown={onKeyDown}
             tabIndex={0}
         >
+            {node.value || " "} {/* Non-breaking space if empty */}
         </div>
     </div>
     </>

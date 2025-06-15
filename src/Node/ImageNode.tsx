@@ -29,6 +29,14 @@ export const ImageNode = ({ node, index }: ImageNodeProps) => {
     const [caption, setCaption] = useState(node.caption || "");
     const [isCaptionEditing, setIsCaptionEditing] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
+    const captionInputRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+    if (isCaptionEditing && captionInputRef.current) {
+        captionInputRef.current.style.height = "auto";
+        captionInputRef.current.style.height = captionInputRef.current.scrollHeight + "px";
+    }
+}, [caption, isCaptionEditing]);
 
     useEffect(() => {
     const getUser = async () => {
@@ -86,10 +94,6 @@ export const ImageNode = ({ node, index }: ImageNodeProps) => {
     const handleCaptionChange = (event: ChangeEvent<HTMLInputElement>) => {
         setCaption(event.target.value);
     };
-
-    const toggleCaptionEdit = () => {
-        setIsCaptionEditing((prev) => !prev);
-        };
 
     const handleSaveCaption = async () => {
         await updateNodeCaptionInPage(pageId, node.id, caption);
@@ -158,12 +162,12 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
         }
     };
 
-
-    const captionInputRef = useRef<HTMLInputElement>(null);
-
     useEffect(() => {
-    if (isCaptionEditing) {
-        captionInputRef.current?.focus();
+    if (isCaptionEditing && captionInputRef.current) {
+        const el = captionInputRef.current;
+        el.focus();
+        // Move caret to end
+        el.selectionStart = el.selectionEnd = el.value.length;
     }
     }, [isCaptionEditing]);
 
@@ -222,11 +226,10 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                         <div className={styles.buttonContainer}>
                         <button onClick={handleDeleteImage} className={styles.button}>Delete</button>
                         <button onClick={handleReplaceImage} className={styles.button}>Replace</button>
-                        <button onClick={toggleCaptionEdit} className={styles.button}>Edit Caption</button>
                         </div>
                     </div>
                           {isCaptionEditing ? (
-                            <input
+                            <textarea
                                 ref={captionInputRef}
                                 type="text"
                                 className={styles.captionInput}
@@ -242,9 +245,22 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                                     }
                                 }}
                                 placeholder="Add a caption..."
+                                style={{ resize: "none", width: "100%" }}
                             />
                         ) : (
-                            <p className={styles.caption}>{caption}</p>
+                            <p
+                                className={styles.caption}
+                                onClick={() => setIsCaptionEditing(true)}
+                                tabIndex={0}
+                                style={{ cursor: "pointer" }}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        setIsCaptionEditing(true);
+                                    }
+                                }}
+                            >
+                                {caption || "Add a caption..."}
+                            </p>
                         )}
                     </Resizable>
                         {loading && <Loader />}
