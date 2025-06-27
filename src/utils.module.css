@@ -25,6 +25,12 @@
   box-shadow: 0px 1px 5px rgba(0,0,0,0.3);
 }
 
+@media (max-width: 650px) {
+  .login {
+    transform: scale(85%);
+  }
+}
+
 .title {
   font-size: 1.5em;
   font-weight: bold;
