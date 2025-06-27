@@ -36,15 +36,21 @@ export const BasicNode = ({
 
     const { changeNodeValue, changeNodeType, removeNodeByIndex, addNode } = useAppState();
     useEffect(() => {
-        if (nodeRef.current && document.activeElement !== nodeRef.current) {
-            nodeRef.current.textContent = node.value;
+        if (!nodeRef.current) return;
+
+        const el = nodeRef.current;
+
+        if (document.activeElement !== el && el.textContent !== node.value) {
+            el.textContent = node.value;
         }
-        if (isFocused) {
-            nodeRef.current?.focus()
-        } else {
-            nodeRef.current?.blur()
+
+        if (isFocused && document.activeElement !== el) {
+            el.focus();
+        } else if (!isFocused && document.activeElement === el) {
+            el.blur();
         }
-    }, [node, isFocused]);
+    }, [node.value, isFocused]);
+
 
     const parseCommand = (nodeType: NodeType) => {
         if (nodeRef.current) {
@@ -67,45 +73,81 @@ export const BasicNode = ({
         if (event.key === "Enter") {
             event.preventDefault();
         
-            if (target.textContent?.[0] === "/") return;
+            if (node.value?.[0] === "/") return;
         
             const selection = window.getSelection();
             const range = selection?.getRangeAt(0);
-            const caretPos = range?.startOffset || 0;
-        
-            const fullText = target.textContent || "";
+            const fullText = node.value || "";
+            const caretPos = range?.startOffset ?? fullText.length;
+
+                if (caretPos === 0) {
+                    addNode({ type: node.type, value: "", id: nanoid() }, index);
+                    requestAnimationFrame(() => {
+                        const next = document.querySelector(`[data-node-index="${index}"]`) as HTMLDivElement;
+                        if (next) {
+                            next.focus();
+                            updateFocusedIndex(index);
+                        }
+                    });
+                    return;
+                }
+
+              if (caretPos === fullText.length) {
+                addNode({ type: node.type, value: "", id: nanoid() }, index + 1);
+                requestAnimationFrame(() => {
+                    const next = document.querySelector(`[data-node-index="${index + 1}"]`) as HTMLDivElement;
+                    if (next) {
+                        next.focus();
+                        updateFocusedIndex(index + 1);
+                    }
+                });
+                return;
+            }
+    
             const before = fullText.slice(0, caretPos);
             const after = fullText.slice(caretPos);
         
-            // Update current node's value
             changeNodeValue(index, before);
-        
-            // Insert new node with remaining text
-            const newNode = { type: node.type, value: after, id: nanoid() };
-            addNode(newNode, index + 1);
-        
-            // Move focus to new node
+            addNode({ type: node.type, value: after, id: nanoid() }, index + 1);
+
             requestAnimationFrame(() => {
                 const next = document.querySelector(`[data-node-index="${index + 1}"]`) as HTMLDivElement;
                 if (next) {
-                    const range = document.createRange();
-                    range.setStart(next.firstChild || next, 0);
-                    range.collapse(true);
-        
-                    const selection = window.getSelection();
-                    if (selection) {
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-        
+                    next.focus();
                     updateFocusedIndex(index + 1);
+                    const range = document.createRange();
+                    range.setStart(next, 0);
+                    range.collapse(true);
+                    const sel = window.getSelection();
+                    sel?.removeAllRanges();
+                    sel?.addRange(range);
                 }
             });
         }
         
         if (event.key === "Backspace") {
-            const selection = window?.getSelection();
-            if (target.textContent?.length === 0) {
+            const text = target.textContent || "";
+            const selection = window.getSelection();
+            const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+
+            const anchorOffset = selection?.anchorOffset ?? 0;
+            const focusOffset = selection?.focusOffset ?? 0;
+
+            // Normalize offsets regardless of selection direction
+            const start = Math.min(anchorOffset, focusOffset);
+            const end = Math.max(anchorOffset, focusOffset);
+
+            const isAllSelected =
+                selection?.anchorNode === selection?.focusNode &&
+                start === 0 &&
+                end === text.length &&
+                text.length > 0;
+
+            const isEverythingSelected = range?.toString() === text;
+
+
+            // Case 1: All text selected — delete entire node
+            if (isAllSelected || isEverythingSelected) {
                 event.preventDefault();
                 removeNodeByIndex(index);
                 requestAnimationFrame(() => {
@@ -115,41 +157,51 @@ export const BasicNode = ({
                         updateFocusedIndex(index - 1);
                     }
                 });
-            }    
-             else if (selection?.anchorOffset === 0) {
+                return;
+            }
+
+            // Case 2: Node is empty — delete it
+            if (text.length === 0) {
+                event.preventDefault();
+                removeNodeByIndex(index);
+                requestAnimationFrame(() => {
+                    const prev = document.querySelector(`[data-node-index="${index - 1}"]`) as HTMLDivElement;
+                    if (prev) {
+                        placeCaretAtEnd(prev);
+                        updateFocusedIndex(index - 1);
+                    }
+                });
+                return;
+            }
+
+            // Case 3: Caret at beginning — merge with previous
+            if (selection?.anchorOffset === 0) {
                 event.preventDefault();
                 const prev = document.querySelector(`[data-node-index="${index - 1}"]`) as HTMLDivElement;
                 const prevText = prev?.textContent || "";
-            
-                const currentText = target.textContent || "";
-            
-                // Merge text content
-                if (prev) {
-                    const boundaryIndex = prevText.length;
+                const currentText = text;
 
+                if (prev) {
                     const mergedText = prevText + currentText;
-            
-                    prev.textContent = mergedText;
                     changeNodeValue(index - 1, mergedText);
                     removeNodeByIndex(index);
-            
-                    // Focus and place caret at end of merged text
+
                     requestAnimationFrame(() => {
-                        // Set caret at the *end of the original first line*
                         const range = document.createRange();
-                        range.setStart(prev.firstChild || prev, boundaryIndex);
+                        range.setStart(prev.firstChild || prev, prevText.length);
                         range.collapse(true);
-            
-                        const selection = window.getSelection();
-                        if (selection) {
-                            selection.removeAllRanges();
-                            selection.addRange(range);
-                        }
-            
+
+                        const sel = window.getSelection();
+                        sel?.removeAllRanges();
+                        sel?.addRange(range);
+
                         updateFocusedIndex(index - 1);
                     });
-                }}
+                }
+                return;
+            }
         }
+
 
         if (event.key === "Delete") {
             const selection = window.getSelection();

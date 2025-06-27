@@ -9,32 +9,55 @@
 	overflow: hidden;
 }
 
-.button {
+@media (max-width: 768px) {
+  .cover {
+    height: 13rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .cover {
+    height: 11rem;
+  }
+}
+
+.coverButtons {
 	position: absolute;
-	bottom: 20px;
-	right: 90px;
-	padding: 6px;
+	bottom: 5%;
+	right: 5%;
+	display: flex;
+	gap: 10px;
 	opacity: 0;
 	transition: opacity 0.2s ease-in-out;
+}
+
+.cover:hover .coverButtons {
+	opacity: 1;
+}
+
+.button, 
+.repositionButton {
+	/* bottom: 10%;
+	right: 5%; */
+	padding: 6px;
 	background: white;
 	border: 2px solid #888;
 	border-radius: 4px;
 	color: #6f6f6f;
 	font-weight: bold;
 	cursor: pointer;
-}
-
-.cover:hover .button {
 	opacity: 1;
 }
 
 .image {
-    position: absolute;
-    top: 0;
-    left: 0;
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: auto;
     width: 100%;
     user-select: none;
     cursor: grab;
+	object-fit: cover;
 }
 
 .imageContainer {
@@ -44,52 +67,14 @@
 	overflow: hidden;
 }
 
-.repositionButton {
-    position: absolute;
-    bottom: 20px;
-    right: 250px;
-    padding: 6px;
-    background: white;
-    border: 2px solid #888;
-    border-radius: 4px;
-    color: #6f6f6f;
-    font-weight: bold;
-    cursor: pointer;
-    opacity: 0;
-}
-
-.cover:hover .repositionButton {
-    opacity: 1;
-}
-
 .dragging {
     cursor: grabbing;
 }
 
-.repositionButton {
-	position: absolute;
-	bottom: 20px;
-	right: 15rem;
-	padding: 6px;
-	background: white;
-	border: 2px solid #888;
-	border-radius: 4px;
-	color: #6f6f6f;
-	font-weight: bold;
-	cursor: pointer;
-	opacity: 0;
-	transition: opacity 0.2s ease-in-out;
-	z-index: 5;
-}
-
-.cover:hover .repositionButton {
-	opacity: 1;
-}
-
 .repositionControls {
 	position: absolute;
-	bottom: 20px;
-	right: 15rem;
+	bottom: 5%;
+	right: 10%;
 	display: flex;
 	gap: 8px;
 }
@@ -102,4 +87,10 @@
 	font-weight: bold;
 	padding: 6px;
 	cursor: pointer;
+}
+
+@media (max-width: 650px) {
+  .coverButtons {
+    opacity: 1 !important;
+  }
 }

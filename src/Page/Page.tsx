@@ -33,12 +33,66 @@ export const Page = ({ node }: PageNodeProps) => {
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const nodeRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-    const focusNode = (index: number) => {
-        const ref = nodeRefs.current.get(index);
-        if (ref) {
-            ref.focus();
-            setFocusedNodeIndex(index);
+    function getCaretCoordinates(): { x: number; y: number } | null {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) return null;
+
+        const range = selection.getRangeAt(0).cloneRange();
+        range.collapse(true);
+
+        const rects = range.getClientRects();
+        if (rects.length > 0) {
+            const rect = rects[0];
+            return { x: rect.left, y: rect.top };
         }
+
+        return null;
+    }
+
+    function setCaretFromX(ref: HTMLElement, x: number) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        const walker = document.createTreeWalker(ref, NodeFilter.SHOW_TEXT, null);
+
+        let node: Text | null = null;
+        while ((node = walker.nextNode() as Text | null)) {
+            const textLength = node.textContent?.length || 0;
+            for (let i = 0; i <= textLength; i++) {
+                range.setStart(node, i);
+                range.setEnd(node, i);
+                const rect = range.getBoundingClientRect();
+                if (rect.left >= x) {
+                    range.collapse(true);
+                    selection?.removeAllRanges();
+                    selection?.addRange(range);
+                    return;
+                }
+            }
+        }
+
+        // fallback: place at end
+        ref.focus();
+        selection?.removeAllRanges();
+        range.selectNodeContents(ref);
+        range.collapse(false);
+        selection?.addRange(range);
+    }
+
+
+
+    const focusNode = (index: number) => {
+        const caretCoords = getCaretCoordinates();
+        const ref = nodeRefs.current.get(index);
+        if (!ref) return;
+
+        setFocusedNodeIndex(index);
+        ref.focus();
+
+        setTimeout(() => {
+            if (caretCoords) {
+                setCaretFromX(ref, caretCoords.x);
+            }
+        }, 0);
     }
 
     useEffect(() => {
@@ -140,8 +194,6 @@ export const Page = ({ node }: PageNodeProps) => {
 
                 if (atEnd && focusedNodeIndex < nodes.length - 1) {
                     event.preventDefault();
-                    // Replace this with your actual delete logic:
-                    console.log(`Would delete node at index ${focusedNodeIndex + 1}`);
                 }
             }
         };
