@@ -22,6 +22,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
     const [imageHeight, setImageHeight] = useState(0);
     const [containerHeight, setContainerHeight] = useState(0);
     const [userId, setUserId] = useState<string | null>(null);
+    const [showButtons, setShowButtons] = useState(false);
+    const isMobile = window.innerWidth <= 650;
 
     useEffect(() => {
     const getUser = async () => {
@@ -51,8 +53,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
        setTempOffsetY((prev) => {
             const tentative = prev + deltaY;
 
-            const minOffset = Math.min(0, containerHeight - imageHeight); // allow full top
-            const maxOffset = 0; // don't let image go down further than container top
+            const minOffset = Math.min(0, containerHeight - imageHeight);
+            const maxOffset = 0; 
 
             return Math.max(minOffset, Math.min(tentative, maxOffset));
         });
@@ -77,10 +79,55 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         document.body.style.userSelect = "auto";
 	};
 
+    // Start dragging on touch
+    const onTouchStart = (e: React.TouchEvent) => {
+        if (!isRepositioning) return;
+        setDragging(true);
+        startYRef.current = e.touches[0].clientY;
+    };
+
+    // Handle dragging on touch
+    const onTouchMove = (e: TouchEvent) => {
+        if (!dragging || startYRef.current === null) return;
+
+        const deltaY = e.touches[0].clientY - startYRef.current;
+        startYRef.current = e.touches[0].clientY;
+
+        setTempOffsetY((prev) => {
+            const tentative = prev + deltaY;
+
+            const minOffset = Math.min(0, containerHeight - imageHeight);
+            const maxOffset = 0;
+
+            return Math.max(minOffset, Math.min(tentative, maxOffset));
+        });
+    };
+
+    // End dragging on touch
+    const onTouchEnd = () => {
+        if (imageHeight > containerHeight) {
+            const minOffset = containerHeight - imageHeight;
+            const maxOffset = 0;
+
+            if (tempOffsetY > maxOffset) {
+                setTempOffsetY(maxOffset);
+            } else if (tempOffsetY < minOffset) {
+                setTempOffsetY(minOffset);
+            }
+        } else {
+            setTempOffsetY(0);
+        }
+
+        setDragging(false);
+        startYRef.current = null;
+    };
+
     useEffect(() => {
         if (dragging) {
             window.addEventListener("mousemove", onMouseMove);
             window.addEventListener("mouseup", onMouseUp);
+            window.addEventListener("touchmove", onTouchMove);
+            window.addEventListener("touchend", onTouchEnd);
             document.body.style.userSelect = "none"; // Disable text selection while dragging
         } else {
             document.body.style.userSelect = "auto"; // Re-enable text selection
@@ -89,6 +136,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         return () => {
             window.removeEventListener("mousemove", onMouseMove);
             window.removeEventListener("mouseup", onMouseUp);
+            window.removeEventListener("touchmove", onTouchMove);
+            window.removeEventListener("touchend", onTouchEnd);
             document.body.style.userSelect = "auto";
         };
     }, [dragging]);    
@@ -113,17 +162,39 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         loadOffset();
     }, [pageId, userId]);    
 
+    useEffect(() => {
+        const handleResize = () => {
+            if (imageRef.current && containerRef.current) {
+                const imgHeight = imageRef.current.offsetHeight;
+                const contHeight = containerRef.current.offsetHeight;
+                setImageHeight(imgHeight);
+                setContainerHeight(contHeight);
+
+                setTempOffsetY((offsetY / 100) * imgHeight);
+            }
+        };
+
+        if (imageHeight) {
+            setTempOffsetY((offsetY / 100) * imageHeight);
+        }
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [offsetY, imageHeight]);
+
+
     const onImageLoad = () => {
         if (imageRef.current && containerRef.current) {
             const imgHeight = imageRef.current.offsetHeight;
             const contHeight = containerRef.current.offsetHeight;
             setImageHeight(imgHeight);
             setContainerHeight(contHeight);
+            setTempOffsetY((offsetY / 100) * imgHeight);
         }
     };    
 
 	const imageStyle = {
-		transform: `translateY(${isRepositioning ? tempOffsetY : offsetY}px)`,
+		transform: `translateY(${isRepositioning ? tempOffsetY : (offsetY / 100) * imageHeight}px)`,
 		cursor: isRepositioning ? (dragging ? "grabbing" : "grab") : "default",
 		userSelect: isRepositioning ? "none" : "auto",
     };
@@ -156,7 +227,7 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         setImageHeight(imageRef.current.offsetHeight);
         setContainerHeight(containerRef.current.offsetHeight);
 
-        setTempOffsetY(offsetY);
+        setTempOffsetY((offsetY / 100) * imageHeight);
         setIsRepositioning(true);
     };
 
@@ -171,13 +242,13 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         clamped = Math.max(minOffset, Math.min(clamped, 0));
 
     
-        setOffsetY(clamped);
+        setOffsetY((clamped / imageHeight) * 100);
         setTempOffsetY(clamped);
         setIsRepositioning(false);
     
         const { error } = await supabase
             .from("pages")
-            .update({ cover_offset_y: clamped })
+            .update({ cover_offset_y: (clamped / imageHeight) * 100 })
             .eq("id", pageId)
             .eq("created_by", userId);
     
@@ -193,28 +264,49 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
         }
     }, [filePath]);
 
+    useEffect(() => {
+        if (!isMobile) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            setShowButtons(false);
+            }
+        };
+
+        window.addEventListener("click", handleClickOutside);
+        return () => window.removeEventListener("click", handleClickOutside);
+    }, [isMobile]);
+
 
     return (
-        <div className={styles.cover} ref={containerRef}>
+        <div className={styles.cover} ref={containerRef} onClick={() => {
+            if (isMobile && !isRepositioning) setShowButtons((prev) => !prev);
+        }}>
             {
                 filePath ? (
-                    <FileImage className={styles.image} filePath={filePath} style={imageStyle} onMouseDown={onMouseDown} draggable={false} ref={imageRef} onLoad={onImageLoad} />
+                    <FileImage className={styles.image} filePath={filePath} style={imageStyle} onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} onLoad={onImageLoad} />
                 ) : (
-                    <img src="./src/Page/Cover Image.png" alt="Cover" className={styles.image} style={imageStyle} onMouseDown={onMouseDown} draggable={false} ref={imageRef} />
+                    <img src="./src/Page/Cover Image.png" alt="Cover" className={styles.image} style={imageStyle} onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} />
                 )
             }
-            {!isRepositioning &&
-				<button className={styles.repositionButton} onClick={startReposition}>
-					Reposition
-				</button>
-			}
-			{isRepositioning && (
-				<div className={styles.repositionControls}>
-					<button onClick={saveReposition}>Save</button>
-					<button onClick={cancelReposition}>Cancel</button>
-				</div>
-			)}
-            <button className={styles.button} onClick={onChangeCoverImage}>Change cover photo</button>
+             {(!isMobile || showButtons) && !isRepositioning && (
+                <div className={styles.coverButtons}>
+                <button className={styles.repositionButton} onClick={startReposition}>
+                    Reposition
+                </button>
+                <button className={styles.button} onClick={onChangeCoverImage}>
+                    Change cover photo
+                </button>
+                </div>
+            )}
+
+            {/* Always show reposition controls when active */}
+            {isRepositioning && (
+                <div className={styles.repositionControls}>
+                <button onClick={saveReposition}>Save</button>
+                <button onClick={cancelReposition}>Cancel</button>
+                </div>
+            )}
             <input onChange={onCoverImageUpload} style={{ display: "none" }} ref={fileInputRef} type="file" />
         </div>
     )

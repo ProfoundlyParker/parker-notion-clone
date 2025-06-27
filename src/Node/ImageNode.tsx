@@ -30,6 +30,9 @@ export const ImageNode = ({ node, index }: ImageNodeProps) => {
     const [isCaptionEditing, setIsCaptionEditing] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const captionInputRef = useRef<HTMLTextAreaElement>(null);
+    const [showButtons, setShowButtons] = useState(false);
+    const isMobile = window.innerWidth <= 650;
+    const nodeRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
     if (isCaptionEditing && captionInputRef.current) {
@@ -188,8 +191,22 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
         };
     }, [removeNodeByIndex, index])
 
+    useEffect(() => {
+        if (!isMobile) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (nodeRef.current && !nodeRef.current.contains(e.target as Node)) {
+                setShowButtons(false);
+            }
+        };
+
+        window.addEventListener("click", handleClickOutside);
+        return () => window.removeEventListener("click", handleClickOutside);
+    }, [isMobile]);
+
+
     return (
-        <div className={cx(styles.node, styles.image)}>
+        <div className={cx(styles.node, styles.image)} ref={nodeRef}>
             {imagePath ? (
                     <>
                 <div className={styles.imageAndCaption}>
@@ -218,16 +235,21 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                         await updateNodeSizeInPage(pageId, node.id, newWidth, newHeight);
                     }}
                     >
-                    <div className={styles.imageWrapper}>
+                    <div className={styles.imageWrapper} onClick={() => {
+                        if (isMobile) {
+                            setShowButtons((prev) => !prev);
+                        }
+                    }}>
                         <FileImage
                         filePath={imagePath}
                         style={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
-                        <div className={styles.buttonContainer}>
+                        <div className={styles.buttonContainer} style={{ display: isMobile ? (showButtons ? "flex" : "none") : undefined }}>
                         <button onClick={handleDeleteImage} className={styles.button}>Delete</button>
                         <button onClick={handleReplaceImage} className={styles.button}>Replace</button>
                         </div>
                     </div>
+                    <div className={styles.captionContainer}>
                           {isCaptionEditing ? (
                             <textarea
                                 ref={captionInputRef}
@@ -262,6 +284,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                                 {caption || "Add a caption..."}
                             </p>
                         )}
+                        </div>
                     </Resizable>
                         {loading && <Loader />}
                         </div>
