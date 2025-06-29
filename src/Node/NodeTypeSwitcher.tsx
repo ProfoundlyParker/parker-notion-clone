@@ -12,7 +12,7 @@ type NodeTypeSwitcherProps = {
 }
 
 const TEXT_NODE_TYPES: NodeType[] = [
-    "text", "list", "numberedList", "heading1", "heading2", "heading3"
+    "text", "list", "heading1", "heading2", "heading3"
 ]
 
 export const NodeTypeSwitcher = ({
