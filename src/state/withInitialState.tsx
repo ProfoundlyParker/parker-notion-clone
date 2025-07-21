@@ -83,7 +83,7 @@ export function withInitialState<TProps>(
     if (isLoading) {
       return (
         <div className={styles.centeredFlex}>
-          <Loader />
+          <Loader data-testid="loader" />
         </div>
       );
     }

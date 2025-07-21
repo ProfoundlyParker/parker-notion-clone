@@ -53,4 +53,15 @@ describe('debounce', () => {
     vi.advanceTimersByTime(1)
     expect(callback).toHaveBeenCalledWith('hi')
   })
+  it('can be called again after the delay and still works', () => {
+    debouncedFn('first');
+    vi.advanceTimersByTime(300);
+    expect(callback).toHaveBeenCalledWith('first');
+
+    // Call again after the previous timer has fired
+    debouncedFn('second');
+    vi.advanceTimersByTime(300);
+    expect(callback).toHaveBeenCalledWith('second');
+    expect(callback).toHaveBeenCalledTimes(2);
+  });
 })
