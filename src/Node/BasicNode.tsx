@@ -253,13 +253,15 @@ export const BasicNode = ({
         <>
         {
             showCommandPanel && (
-                <CommandPanel selectItem={parseCommand} nodeText={node.value} />
+                <CommandPanel data-testid="command-panel" selectItem={parseCommand} nodeText={node.value} />
             )
         }
         <div onClick={handleClick} 
         onInput={handleInput}
         onKeyDown={onKeyDown}
         ref={nodeRef} contentEditable
+        role="textbox"
+        data-testid={`editable-${index}`}
         data-node-index={index}
         suppressContentEditableWarning
         className={cx(styles.node, styles[node.type])}></div>

@@ -50,6 +50,7 @@ export const NodeContainer = ({ node, index, isFocused, updateFocusedIndex, regi
         className={styles.container}
         {...attributes}
         onClick={handleContainerClick}
+        data-testid="node-container"
         >
            <div {...listeners} className={styles.dragHandle}>
              ⠿

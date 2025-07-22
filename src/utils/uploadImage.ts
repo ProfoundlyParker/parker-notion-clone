@@ -18,5 +18,4 @@ export const uploadImage = async (file?: File) => {
         if (data) {
             return {filePath, fileName}
         }
-
 }
