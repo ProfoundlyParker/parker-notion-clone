@@ -81,4 +81,38 @@ describe("FileImage", () => {
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
     });
   });
+  it("logs error when download throws", async () => {
+    const errorSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    downloadMock.mockRejectedValueOnce(new Error("network fail"));
+
+    render(<FileImage filePath="error.jpg" />);
+    
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        "error downloading image:",
+        expect.any(Error)
+      );
+    });
+
+    errorSpy.mockRestore();
+  });
+  it("sets loading false and image empty when filePath is falsy", async () => {
+    const { container } = render(<FileImage filePath={null as any} />);
+    
+    await waitFor(() => {
+      expect(container.querySelector("img")).toBeNull();
+    });
+  });
+  it("does not render image if createObjectURL returns empty string", async () => {
+    (global.URL.createObjectURL as any).mockReturnValueOnce("");
+
+    const mockBlob = new Blob(["data"], { type: "image/jpeg" });
+    downloadMock.mockResolvedValueOnce({ data: mockBlob, error: null });
+
+    render(<FileImage filePath="test.jpg" />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    });
+  });
 });
