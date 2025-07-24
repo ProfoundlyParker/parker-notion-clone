@@ -1,4 +1,3 @@
-// components/NumberedListNode.tsx
 import { useRef, useEffect, FormEventHandler, KeyboardEventHandler, useState } from "react";
 import cx from "classnames";
 import { NodeData, NodeType } from "../utils/types";
@@ -58,30 +57,18 @@ export const NumberedListNode = ({
         updateFocusedIndex(index);
     };
 
-     const placeCaretAtEnd = (el: HTMLElement) => {
-        el.focus();
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        if (sel) {
-            sel.removeAllRanges();
-            sel.addRange(range);
+    const parseCommand = (nodeType: NodeType) => {
+        if (nodeRef.current) {
+            changeNodeType(index, nodeType);
+            nodeRef.current.textContent = "";
+            setJustChangedType(true);
         }
-    };  
-
-       const parseCommand = (nodeType: NodeType) => {
-            if (nodeRef.current) {
-                changeNodeType(index, nodeType);
-                nodeRef.current.textContent = "";
-                setJustChangedType(true);
-            }
-        }
+    }
 
     const onKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
         const target = event.target as HTMLDivElement;
 
-          if (event.key === "Backspace") {
+        if (event.key === "Backspace") {
             const selection = window.getSelection();
             const caretPos = selection?.getRangeAt(0)?.startOffset || 0;
             const text = target.textContent || "";
@@ -126,7 +113,7 @@ export const NumberedListNode = ({
             }
 
             // Case 2: If node is empty
-            if (text.length === 0) {
+            if (text.length === 0 || target.innerHTML === "<br>") {
                 event.preventDefault();
                 removeNodeByIndex(index);
 
@@ -263,8 +250,6 @@ export const NumberedListNode = ({
                 }
             }
         }
-
-
     };
 
  return (
@@ -288,6 +273,8 @@ export const NumberedListNode = ({
                 }
             }}
             contentEditable
+            data-testid="editable"
+            role="textbox"
             suppressContentEditableWarning
             className={styles.editable}
             style={{
