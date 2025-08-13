@@ -18,6 +18,14 @@ vi.mock("../supabaseClient", () => ({
   },
 }));
 
+const fakeBlob = new Blob(['fake image data'], { type: 'image/png' });
+const fakeUrl = 'blob:http://localhost/fake-url';
+
+vi.stubGlobal('URL', {
+  createObjectURL: vi.fn(() => fakeUrl),
+  revokeObjectURL: vi.fn(),
+});
+
 beforeEach(() => {
   global.URL.createObjectURL = vi.fn(() => "blob:http://localhost/fake-url");
 });
@@ -113,6 +121,70 @@ describe("FileImage", () => {
 
     await waitFor(() => {
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    });
+  });
+  it('downloads and displays image when filePath is valid', async () => {
+    downloadMock.mockResolvedValueOnce({ data: fakeBlob, error: null });
+
+    render(<FileImage filePath="valid/path.png" />);
+
+    expect(screen.getByTestId('loader')).toBeInTheDocument(); // Loader
+
+    await waitFor(() => {
+      expect(screen.getByTestId('image')).toHaveAttribute('src', fakeUrl);
+    });
+  });
+  it('sets loading false and image blank when filePath is empty', async () => {
+    render(<FileImage filePath="" />);
+    await waitFor(() => {
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    });
+  });
+  it('handles download error gracefully', async () => {
+    const errorMock = vi.fn().mockResolvedValue({ data: null, error: new Error('404') });
+    downloadMock.mockResolvedValueOnce({ data: fakeBlob, error: null });
+
+    render(<FileImage filePath="bad/path.png" />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    });
+  });
+  it('renders null when loading is false and image is empty', async () => {
+    render(<FileImage filePath="" />);
+    await waitFor(() => {
+      expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    });
+  });
+  it("logs error when download throws (inside downloadImage)", async () => {
+    const errorSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    downloadMock.mockImplementationOnce(() => {
+      throw new Error("download failed");
+    });
+
+    render(<FileImage filePath="fail.jpg" />);
+    
+    await waitFor(() => {
+      expect(errorSpy).toHaveBeenCalledWith(
+        "error downloading image:",
+        expect.any(Error)
+      );
+    });
+
+    errorSpy.mockRestore();
+  });
+  it("handles null or undefined filePath by setting loading false and empty image", async () => {
+    const { container } = render(<FileImage filePath={null as any} />);
+    
+    await waitFor(() => {
+      expect(container.querySelector("img")).toBeNull();
+    });
+
+    render(<FileImage filePath={undefined as any} />);
+    
+    await waitFor(() => {
+      expect(container.querySelector("img")).toBeNull();
     });
   });
 });

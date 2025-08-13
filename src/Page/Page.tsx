@@ -296,7 +296,7 @@ export const Page = ({ node }: PageNodeProps) => {
             <div className={styles.coverWrapper}>
             <Cover filePath={cover} changePageCover={setCoverImage} pageId={numericId} />
             <div className={styles.pageHeader}>
-                    <span onClick={handleEmojiIconClick} className={styles.emoji}>
+                    <span onClick={handleEmojiIconClick} className={styles.emoji} data-testid="emoji-option">
                         {emoji}
                     </span>
                     {showPicker && (

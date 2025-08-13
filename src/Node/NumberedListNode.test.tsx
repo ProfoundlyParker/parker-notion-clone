@@ -37,6 +37,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   mockChangeNodeValue.mockClear();
   mockRemoveNodeByIndex.mockClear();
+  mockChangeNodeType.mockClear();
+  mockAddNode.mockClear();
 });
 
 afterEach(() => {
@@ -312,5 +314,17 @@ describe("NumberedListNode", () => {
     vi.runAllTimers();
 
     expect(mockChangeNodeValue).not.toHaveBeenCalled();
+  });
+  it("resets justChangedType on Enter key", () => {
+    const { getByTestId } = render(<NumberedListNode {...baseProps} />);
+    const editable = getByTestId("editable");
+
+    mockSelectItem?.("heading");
+
+    fireEvent.keyDown(editable, {
+      key: "Enter",
+    });
+
+    expect(mockAddNode).toHaveBeenCalled();
   });
 });

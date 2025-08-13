@@ -28,7 +28,7 @@ beforeEach(() => {
   mockRemoveNodeByIndex.mockClear();
 });
 
-import { render, fireEvent, waitFor } from '@testing-library/react'
+import { render, fireEvent, waitFor, act } from '@testing-library/react'
 import { BasicNode } from './BasicNode'
 import { NodeType } from '../utils/types'
 import { vi } from 'vitest'
@@ -451,4 +451,44 @@ describe('BasicNode', () => {
 
         expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(0)
     })
+    it('removes empty node on Backspace and moves focus to previous node', () => {
+    const { getByTestId } = render(
+        <BasicNode {...baseProps} index={1} node={{ id: '2', type: 'text', value: '' }} isFocused={true} />
+    );
+
+    const editable = getByTestId('editable-1');
+    editable.focus();
+
+    fireEvent.keyDown(editable, { key: 'Backspace' });
+    vi.useFakeTimers();
+
+    act(() => {
+        vi.runAllTimers();
+    });
+
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1);
+    });
+    it('adds node above when Enter is pressed at start of text', () => {
+    const mockSelection = {
+        removeAllRanges: vi.fn(),
+        addRange: vi.fn(),
+        anchorOffset: 0,
+        getRangeAt: () => ({ startOffset: 0 }),
+    };
+    vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection as any);
+
+    const { getByTestId } = render(<BasicNode {...baseProps} isFocused={true} />);
+    const editable = getByTestId('editable-0');
+    editable.focus();
+
+    fireEvent.keyDown(editable, { key: 'Enter' });
+
+    vi.useFakeTimers();
+
+    act(() => {
+        vi.runAllTimers();
+    });
+
+    expect(mockAddNode).toHaveBeenCalledWith(expect.objectContaining({ value: "" }), 0);
+    });
 })
