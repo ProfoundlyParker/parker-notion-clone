@@ -10,13 +10,10 @@ import { supabase } from "../supabaseClient";
 import { Resizable } from "re-resizable";
 import { usePageId } from "../Page/PageIdContext";
 
-
 type ImageNodeProps = {
     node: NodeData;
     index: number;
 };
-
-
 
 export const ImageNode = ({ node, index }: ImageNodeProps) => {
     const pageId = usePageId();
@@ -206,7 +203,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
 
 
     return (
-        <div className={cx(styles.node, styles.image)} ref={nodeRef}>
+        <div className={cx(styles.node, styles.image)} ref={nodeRef} data-testid="image-node">
             {imagePath ? (
                     <>
                 <div className={styles.imageAndCaption}>
@@ -226,6 +223,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                     maxHeight={700}
                     minHeight="auto"
                     minWidth={400}
+                    data-testid="resize-wrapper"
                     style={{ display: "inline-table" }}
                     onResizeStop={async (e, direction, ref, delta) => {
                         const newWidth = ref.offsetWidth;
@@ -242,11 +240,12 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                     }}>
                         <FileImage
                         filePath={imagePath}
+                        data-testid="node-image"
                         style={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
-                        <div className={styles.buttonContainer} style={{ display: isMobile ? (showButtons ? "flex" : "none") : undefined }}>
-                        <button onClick={handleDeleteImage} className={styles.button}>Delete</button>
-                        <button onClick={handleReplaceImage} className={styles.button}>Replace</button>
+                        <div className={styles.buttonContainer} data-testid="buttons" style={{ display: isMobile ? (showButtons ? "flex" : "none") : undefined }}>
+                        <button onClick={handleDeleteImage} data-testid="delete-image" className={styles.button}>Delete</button>
+                        <button onClick={handleReplaceImage} data-testid="replace-image" className={styles.button}>Replace</button>
                         </div>
                     </div>
                     <div className={styles.captionContainer}>
@@ -280,6 +279,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                                         setIsCaptionEditing(true);
                                     }
                                 }}
+                                data-testid="image-caption"
                             >
                                 {caption || "Add a caption..."}
                             </p>
@@ -302,6 +302,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                 type="file"
                 ref={fileInputRef}
                 onChange={onImageUpload}
+                data-testid="node-image-upload"
                 accept="image/*"
                 style={{ display: "none" }}
             />

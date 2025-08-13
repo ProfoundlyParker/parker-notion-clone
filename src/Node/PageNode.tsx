@@ -133,6 +133,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
             }
 
             removeNodeByIndex(index);
+            console.log("Page deleted successfully");
         };
 
     useEffect(() => {
@@ -169,15 +170,15 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
                     </div>
                 )}
             <div className={styles.pageContent} onClick={handlePageClick}>
-                <span onClick={handleEmojiIconClick} className={styles.emoji}>
+                <span onClick={handleEmojiIconClick} className={styles.emoji} data-testid="emoji">
                     {emoji}
                 </span>
                 {showPicker && (
-                    <div className={styles.emojiPicker} ref={pickerRef} onClick={(e) => e.stopPropagation()}>
+                    <div className={styles.emojiPicker} ref={pickerRef} onClick={(e) => e.stopPropagation()} data-testid="emoji-picker">
                         <EmojiPicker onEmojiClick={handleEmojiClick} />
                     </div>
                 )}
-                <span className={styles.pageTitle} onChange={handleTitleChange}>{pageTitle}</span>
+                <span className={styles.pageTitle} data-testid="textbox" onChange={handleTitleChange}>{pageTitle}</span>
                 <button className={styles.deleteButton} onClick={handleDeleteClick} title="Delete this page">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"

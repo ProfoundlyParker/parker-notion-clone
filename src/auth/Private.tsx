@@ -14,4 +14,4 @@ export const Private = ({ children }: PrivateProps) => {
     }
   
     return session ? <>{children}</> : <Navigate to="/auth" replace />;
-  };
+};

@@ -279,19 +279,19 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
 
 
     return (
-        <div className={styles.cover} ref={containerRef} onClick={() => {
+        <div className={styles.cover} ref={containerRef} data-testid="cover-container" onClick={() => {
             if (isMobile && !isRepositioning) setShowButtons((prev) => !prev);
         }}>
             {
                 filePath ? (
-                    <FileImage className={styles.image} filePath={filePath} style={imageStyle} onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} onLoad={onImageLoad} />
+                    <FileImage className={styles.image} filePath={filePath} style={imageStyle} data-testid="cover-image" onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} onLoad={onImageLoad} />
                 ) : (
-                    <img src="./src/Page/Cover Image.png" alt="Cover" className={styles.image} style={imageStyle} onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} />
+                    <img src="./src/Page/Cover Image.png" alt="Cover" className={styles.image} style={imageStyle} data-testid="cover-image" onMouseDown={onMouseDown} onTouchStart={onTouchStart} draggable={false} ref={imageRef} />
                 )
             }
              {(!isMobile || showButtons) && !isRepositioning && (
-                <div className={styles.coverButtons}>
-                <button className={styles.repositionButton} onClick={startReposition}>
+                <div className={styles.coverButtons} data-testid="buttons">
+                <button className={styles.repositionButton} onClick={startReposition} data-testid="reposition">
                     Reposition
                 </button>
                 <button className={styles.button} onClick={onChangeCoverImage}>
@@ -303,8 +303,8 @@ export const Cover = ({ filePath, changePageCover, pageId }: CoverProps) => {
             {/* Always show reposition controls when active */}
             {isRepositioning && (
                 <div className={styles.repositionControls}>
-                <button onClick={saveReposition}>Save</button>
-                <button onClick={cancelReposition}>Cancel</button>
+                <button onClick={saveReposition} data-testid="save">Save</button>
+                <button onClick={cancelReposition} data-testid="cancel">Cancel</button>
                 </div>
             )}
             <input onChange={onCoverImageUpload} style={{ display: "none" }} ref={fileInputRef} type="file" />

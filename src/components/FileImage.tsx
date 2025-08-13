@@ -45,7 +45,7 @@ export const FileImage = forwardRef<HTMLImageElement, FileImageProps>(
     }
 
     return image ? (
-        <img src={image} alt={filePath} ref={ref} onLoad={onLoad} {...props} />
+        <img src={image} alt={filePath} ref={ref} onLoad={onLoad} data-testid="image" {...props} />
     ) : null;
     }
 );

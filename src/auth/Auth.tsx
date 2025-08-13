@@ -83,6 +83,4 @@ export const Auth = () => {
             </form>
         </div>
     );
-
-
 }

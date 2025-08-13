@@ -26,4 +26,15 @@ describe('usePageId', () => {
 
     console.error = originalError;
   });
+  it('throws correct error when used outside the provider (inline check)', () => {
+    let error;
+    try {
+      render(<TestComponent />);
+    } catch (e: any) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe('usePageId must be used within a PageIdProvider');
+  });
 });
