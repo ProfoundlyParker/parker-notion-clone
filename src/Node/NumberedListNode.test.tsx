@@ -327,4 +327,209 @@ describe("NumberedListNode", () => {
 
     expect(mockAddNode).toHaveBeenCalled();
   });
+  it("calls changeNodeType and clears content when command is selected", () => {
+    const props = {
+      ...baseProps,
+      isFocused: true,
+      node: { ...baseProps.node, value: "/cmd" },
+    };
+
+    render(<NumberedListNode {...props} />);
+    const editable = screen.getByTestId("editable");
+    editable.textContent = "/cmd";
+
+    fireEvent.click(screen.getByTestId("select-numbered"));
+
+    expect(mockChangeNodeType).toHaveBeenCalledWith(0, "numbered-list");
+    expect(editable.textContent).toBe("");
+  });
+  it("does not add new node if Enter is pressed after command change", () => {
+    const props = {
+      ...baseProps,
+      isFocused: true,
+      node: { ...baseProps.node, value: "/cmd" },
+    };
+
+    render(<NumberedListNode {...props} />);
+
+    fireEvent.click(screen.getByTestId("select-numbered"));
+
+    const editable = screen.getByTestId("editable");
+    editable.focus();
+
+    fireEvent.keyDown(editable, { key: "Enter" });
+
+    vi.runAllTimers();
+
+    expect(mockAddNode).not.toHaveBeenCalled();
+  });
+  it("merges current node with previous if caret is at start", () => {
+    render(
+      <>
+        <NumberedListNode
+          index={0}
+          node={{ id: "prev", type: "numbered-list", value: "Prev" }}
+          isFocused={false}
+          updateFocusedIndex={vi.fn()}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+        <NumberedListNode
+          index={1}
+          node={{ id: "curr", type: "numbered-list", value: "Curr" }}
+          isFocused={true}
+          updateFocusedIndex={vi.fn()}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+      </>
+    );
+
+    const editable = screen.getAllByTestId("editable")[1];
+    editable.textContent = "Curr";
+    editable.focus();
+
+    const range = document.createRange();
+    range.setStart(editable.firstChild!, 0);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    fireEvent.keyDown(editable, { key: "Backspace" });
+
+    vi.runAllTimers();
+
+    expect(mockChangeNodeValue).toHaveBeenCalledWith(0, "PrevCurr");
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1);
+  });
+  it("merges current node with next if caret is at end and Delete is pressed", () => {
+    render(
+      <>
+        <NumberedListNode
+          index={0}
+          node={{ id: "curr", type: "numbered-list", value: "Curr" }}
+          isFocused={true}
+          updateFocusedIndex={vi.fn()}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+        <NumberedListNode
+          index={1}
+          node={{ id: "next", type: "numbered-list", value: "Next" }}
+          isFocused={false}
+          updateFocusedIndex={vi.fn()}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+      </>
+    );
+
+    const editable = screen.getAllByTestId("editable")[0];
+    editable.textContent = "Curr";
+    editable.focus();
+
+    const range = document.createRange();
+    range.setStart(editable.firstChild!, "Curr".length);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    fireEvent.keyDown(editable, { key: "Delete" });
+
+    vi.runAllTimers();
+
+    expect(mockChangeNodeValue).toHaveBeenCalledWith(0, "CurrNext");
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1);
+  });
+  it("deletes node and moves focus to previous node when all text is selected and Backspace is pressed", () => {
+    render(
+      <>
+        <NumberedListNode
+          index={0}
+          node={{ id: "prev", type: "numbered-list", value: "Prev" }}
+          isFocused={false}
+          updateFocusedIndex={mockChangeNodeValue}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+        <NumberedListNode
+          index={1}
+          node={{ id: "curr", type: "numbered-list", value: "Curr" }}
+          isFocused={true}
+          updateFocusedIndex={mockChangeNodeValue}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+      </>
+    );
+
+    const editable = screen.getAllByTestId("editable")[1];
+    editable.textContent = "Curr";
+    editable.focus();
+
+    const range = document.createRange();
+    range.setStart(editable.firstChild!, 0);
+    range.setEnd(editable.firstChild!, "Curr".length);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    const prevNode = screen.getAllByTestId("editable")[0];
+    const focusSpy = vi.spyOn(prevNode, "focus");
+
+    fireEvent.keyDown(editable, { key: "Backspace" });
+
+    vi.runAllTimers();
+
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1);
+    expect(focusSpy).toHaveBeenCalled();
+    expect(mockChangeNodeValue).toHaveBeenCalledWith(0);
+  });
+  it("deletes node and moves focus to previous node when node is empty and Backspace is pressed", () => {
+    render(
+      <>
+        <NumberedListNode
+          index={0}
+          node={{ id: "prev", type: "numbered-list", value: "Prev" }}
+          isFocused={false}
+          updateFocusedIndex={mockChangeNodeValue}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+        <NumberedListNode
+          index={1}
+          node={{ id: "curr", type: "numbered-list", value: "" }}
+          isFocused={true}
+          updateFocusedIndex={mockChangeNodeValue}
+          changeNodeValue={mockChangeNodeValue}
+          removeNodeByIndex={mockRemoveNodeByIndex}
+        />
+      </>
+    );
+
+    const editable = screen.getAllByTestId("editable")[1];
+    editable.textContent = "";
+    editable.innerHTML = "<br>";
+    editable.focus();
+
+    const range = document.createRange();
+    range.setStart(editable, 0);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    const prevNode = screen.getAllByTestId("editable")[0];
+    const focusSpy = vi.spyOn(prevNode, "focus");
+
+    fireEvent.keyDown(editable, { key: "Backspace" });
+
+    vi.runAllTimers();
+
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1);
+    expect(focusSpy).toHaveBeenCalled();
+    expect(mockChangeNodeValue).toHaveBeenCalledWith(0);
+  });
 });

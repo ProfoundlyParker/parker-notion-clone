@@ -491,4 +491,52 @@ describe('BasicNode', () => {
 
     expect(mockAddNode).toHaveBeenCalledWith(expect.objectContaining({ value: "" }), 0);
     });
+    it('deletes node and moves caret to previous node when all text is selected and Backspace is pressed', async () => {
+        const mockPrevDiv = document.createElement('div')
+        mockPrevDiv.setAttribute('data-node-index', '0')
+        document.body.appendChild(mockPrevDiv)
+
+        const { getByTestId } = render(
+            <>
+            <BasicNode {...baseProps} index={1} />
+            </>
+        )
+
+        const editable = getByTestId('editable-1')
+
+        editable.textContent = 'Text'
+        const range = document.createRange()
+        range.selectNodeContents(editable)
+        const sel = window.getSelection()
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+
+        fireEvent.keyDown(editable, { key: 'Backspace' })
+
+        await act(() => Promise.resolve())
+
+        expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1)
+        expect(mockUpdateFocusedIndex).toHaveBeenCalledWith(0)
+    })
+    it('deletes node and focuses previous when node is empty and Backspace is pressed', async () => {
+        const mockPrev = document.createElement('div')
+        mockPrev.setAttribute('data-node-index', '0')
+        document.body.appendChild(mockPrev)
+
+        const { getByTestId } = render(
+            <>
+            <BasicNode {...baseProps} index={1} />
+            </>
+        )
+
+        const editable = getByTestId('editable-1')
+        editable.textContent = ''
+
+        fireEvent.keyDown(editable, { key: 'Backspace' })
+
+        await act(() => Promise.resolve())
+
+        expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(1)
+        expect(mockUpdateFocusedIndex).toHaveBeenCalledWith(0)
+    });
 })

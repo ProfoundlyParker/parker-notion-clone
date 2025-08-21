@@ -30,6 +30,8 @@ vi.mock("../utils/uploadImage", () => ({
 }));
 
 import { render, fireEvent, waitFor } from "@testing-library/react";
+import { uploadImage } from "../utils/uploadImage";
+import { supabase } from "../supabaseClient";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { Cover } from "./Cover";
 
@@ -202,5 +204,73 @@ describe("Cover", () => {
     expect(removeListenerSpy).toHaveBeenCalledWith("mouseup", expect.any(Function));
     expect(removeListenerSpy).toHaveBeenCalledWith("touchmove", expect.any(Function));
     expect(removeListenerSpy).toHaveBeenCalledWith("touchend", expect.any(Function));
+  });
+  it("handles uploadImage error gracefully", async () => {
+    vi.mocked(uploadImage).mockRejectedValueOnce(new Error("Upload failed"));
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const { getByText, container } = render(<Cover {...defaultProps} />);
+    fireEvent.click(getByText("Change cover photo"));
+
+    const fileInput = container.querySelector('input[type="file"]')!;
+    const file = new File(["dummy"], "fail.png", { type: "image/png" });
+
+    fireEvent.change(fileInput, {
+      target: { files: [file] },
+    });
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith("Error uploading cover image:", expect.any(Error));
+    });
+  });
+  it("handles touch drag to reposition image", async () => {
+    const { getByTestId } = render(<Cover {...defaultProps} />);
+    fireEvent.click(getByTestId("reposition"));
+
+    const container = getByTestId("cover-container");
+    Object.defineProperty(container, "offsetHeight", { value: 300 });
+
+    const image = getByTestId("cover-image");
+    Object.defineProperty(image, "offsetHeight", { value: 400 });
+
+    fireEvent.touchStart(container, {
+      touches: [{ clientY: 100 }],
+    });
+
+    fireEvent.touchMove(window, {
+      touches: [{ clientY: 120 }],
+    });
+
+    fireEvent.touchMove(window, {
+      touches: [{ clientY: 150 }],
+    });
+
+    fireEvent.touchEnd(window);
+  });
+  it("handles error when loading cover offset from supabase", async () => {
+    vi.mocked(supabase.from).mockReturnValueOnce({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: "error" }),
+      update: vi.fn(),
+    });
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<Cover {...defaultProps} />);
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith("Failed to load cover offset:", "error");
+    });
+  });
+  it("logs error when no user is found", async () => {
+    vi.mocked(supabase.auth.getUser).mockResolvedValueOnce({
+      data: null,
+      error: { message: "No user" }
+    });
+
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<Cover {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith("User not found:", { message: "No user" });
+    });
   });
 });

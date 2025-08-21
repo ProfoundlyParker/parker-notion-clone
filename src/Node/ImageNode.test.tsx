@@ -6,12 +6,13 @@ import { supabase } from "../supabaseClient";
 
 const mockRemoveNodeByIndex = vi.fn();
 const mockChangeNodeValue = vi.fn();
+const mockChangeNodeType = vi.fn();
 
 vi.mock("../state/AppStateContext", () => ({
   useAppState: () => ({
     changeNodeValue: mockChangeNodeValue,
     removeNodeByIndex: mockRemoveNodeByIndex,
-    changeNodeType: vi.fn(),
+    changeNodeType: mockChangeNodeType,
   }),
 }));
 
@@ -234,6 +235,107 @@ describe("<ImageNode />", () => {
 
     await waitFor(() => {
         expect(queryByTestId("buttons")).toHaveStyle("display: block");
+    });
+  });
+  it("falls back to text node on upload error", async () => {
+    const mockUpload = uploadImage as unknown as vi.Mock;
+    mockUpload.mockRejectedValue(new Error("Upload failed"));
+
+    render(<ImageNode {...defaultProps} />);
+    const fileInput = screen.getByTestId("node-image-upload");
+
+    fireEvent.change(fileInput, {
+      target: { files: [new File(["fail"], "fail.png", { type: "image/png" })] },
+    });
+
+    await waitFor(() => {
+      expect(mockChangeNodeValue).toHaveBeenCalledWith(0, "");
+    });
+  });
+  it("calls updateNodeSizeInPage on resize", async () => {
+    render(<ImageNode {...defaultProps} />);
+
+    const resizeWrapper = screen.getByTestId("resize-wrapper");
+
+    fireEvent.mouseDown(resizeWrapper);
+    fireEvent.mouseUp(resizeWrapper); 
+
+    await waitFor(() => {
+      expect(supabase.from).toHaveBeenCalledWith("pages");
+    });
+  });
+  it("removes node on Backspace keydown when not in input", () => {
+    render(<ImageNode {...defaultProps} />);
+    fireEvent.keyDown(window, { key: "Backspace" });
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(0);
+  });
+  it("activates caption input on Enter or Space key", () => {
+    render(<ImageNode {...defaultProps} />);
+    const caption = screen.getByTestId("image-caption");
+
+    fireEvent.keyDown(caption, { key: "Enter" });
+    expect(screen.getByTestId("caption-input")).toBeInTheDocument();
+
+    render(<ImageNode {...defaultProps} />);
+    const caption2 = screen.getByTestId("image-caption");
+
+    fireEvent.keyDown(caption2, { key: " " });
+    expect(screen.getByTestId("caption-input")).toBeInTheDocument();
+  });
+  it("focuses caption input and moves caret to end when editing", async () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200, caption: "abc" }} index={0} />);
+    const caption = screen.getByTestId("image-caption");
+    fireEvent.click(caption);
+    const input = screen.getByTestId("caption-input");
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(input.value.length);
+    expect(input.selectionEnd).toBe(input.value.length);
+  });
+  it("removes node on Backspace if input is not focused", () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200 }} index={0} />);
+    fireEvent.keyDown(window, { key: "Backspace" });
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(0);
+  });
+  it("hides buttons when clicking outside on mobile", async () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200 }} index={0} />);
+    Object.defineProperty(window, "innerWidth", { writable: true, value: 400 });
+    window.dispatchEvent(new Event("resize"));
+    const imageNode = screen.getByTestId("image-node");
+    fireEvent.click(imageNode);
+    const buttons = screen.getByTestId("buttons");
+    expect(buttons).toBeInTheDocument();
+    fireEvent.click(document.body);
+    await waitFor(() => {
+      expect(buttons).toHaveStyle("display: none");
+    });
+  });
+  it("shows upload button if imagePath is empty", () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "", width: 300, height: 200 }} index={0} />);
+    expect(screen.getByText("Upload Image")).toBeInTheDocument();
+  });
+  it("file input has correct props", () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200 }} index={0} />);
+    const fileInput = screen.getByTestId("node-image-upload");
+    expect(fileInput).toHaveAttribute("type", "file");
+    expect(fileInput).toHaveAttribute("accept", "image/*");
+    expect(fileInput).toHaveStyle("display: none");
+  });
+  it("removes node on Backspace keydown when not in input", () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200 }} index={0} />);
+    fireEvent.keyDown(window, { key: "Backspace" });
+    expect(mockRemoveNodeByIndex).toHaveBeenCalledWith(0);
+  });
+    it("hides buttons when clicking outside on mobile", async () => {
+    render(<ImageNode node={{ id: "node-id", type: "image", value: "img.png", width: 300, height: 200 }} index={0} />);
+    Object.defineProperty(window, "innerWidth", { writable: true, value: 400 });
+    window.dispatchEvent(new Event("resize"));
+    const imageNode = screen.getByTestId("image-node");
+    fireEvent.click(imageNode);
+    const buttons = screen.getByTestId("buttons");
+    expect(buttons).toBeInTheDocument();
+    fireEvent.click(document.body);
+    await waitFor(() => {
+      expect(buttons).toHaveStyle("display: none");
     });
   });
 });

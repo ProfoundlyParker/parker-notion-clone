@@ -102,20 +102,6 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
         setShowPicker((prev) => !prev);
     };
 
-    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newTitle = e.target.value;
-        setPageTitle(newTitle);
-        if (node.value) {
-            supabase
-                .from("pages")
-                .update({ title: newTitle })
-                .eq("slug", node.value)
-                .then(() => {
-                    console.log("Title updated successfully");
-                });
-        }
-    };
-
     const handleDeleteClick = async (e: React.MouseEvent) => {
             e.stopPropagation();
             if (!node.value) return;
@@ -178,7 +164,7 @@ export const PageNode = ({ node, isFocused, index }: PageNodeProps) => {
                         <EmojiPicker onEmojiClick={handleEmojiClick} />
                     </div>
                 )}
-                <span className={styles.pageTitle} data-testid="textbox" onChange={handleTitleChange}>{pageTitle}</span>
+                <span className={styles.pageTitle} data-testid="textbox">{pageTitle}</span>
                 <button className={styles.deleteButton} onClick={handleDeleteClick} title="Delete this page">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
