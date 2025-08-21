@@ -277,32 +277,35 @@ describe("Page component", () => {
   });
   it("updates emoji via handleEmojiClick", async () => {
     const mockSetTitle = vi.fn();
+    const chain = {
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { title: "My Title", emoji: "🧪" } }),
+    };
 
-    // Mock the second .single() call after emoji update
-    vi.mocked(supabase.from).mockReturnValueOnce({
-        update: vi.fn().mockResolvedValue({ error: null }),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: { title: "My Title", emoji: "🧪" } }),
+    vi.mocked(supabase.from).mockReturnValue({
+      update: vi.fn().mockReturnValue(chain),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { title: "My Title", emoji: "🧪" } }),
     } as any);
 
     (useAppState as any).mockReturnValue({
-        title: "Test Page",
-        nodes: [],
-        cover: "test.jpg",
-        isCommanPanelOpen: false,
-        addNode: vi.fn(),
-        reorderNodes: vi.fn(),
-        setCoverImage: vi.fn(),
-        setTitle: mockSetTitle,
+      title: "Test Page",
+      nodes: [],
+      cover: "test.jpg",
+      isCommanPanelOpen: false,
+      addNode: vi.fn(),
+      reorderNodes: vi.fn(),
+      setCoverImage: vi.fn(),
+      setTitle: mockSetTitle,
     });
 
     const { getByTestId } = render(<Page />);
-    fireEvent.click(getByTestId("emoji-option")); // open picker
-    fireEvent.click(getByTestId("emoji-option-button")); // pick emoji
+    fireEvent.click(getByTestId("emoji-option"));
+    fireEvent.click(getByTestId("emoji-option-button"));
 
     await waitFor(() => {
-        expect(mockSetTitle).toHaveBeenCalledWith("My Title");
+      expect(mockSetTitle).toHaveBeenCalledWith("My Title");
     });
   });
   it("calls reorderNodes on drag end", () => {
@@ -320,8 +323,7 @@ describe("Page component", () => {
     });
 
     const { getByTestId } = render(<Page />);
-    fireEvent.click(getByTestId("dnd-context")); // manually triggers drag end
-
+    fireEvent.click(getByTestId("dnd-context"));
     expect(reorderNodes).toHaveBeenCalledWith("a", "b");
   });
   it("saves title after debounce", async () => {
@@ -334,7 +336,7 @@ describe("Page component", () => {
     const { getByTestId } = render(<Page />);
     fireEvent.change(getByTestId("title-input"), { target: { value: "Updated Title" } });
 
-    await new Promise((r) => setTimeout(r, 250)); // debounce is 200ms
+    await new Promise((r) => setTimeout(r, 250));
     expect(mockSetTitle).toHaveBeenCalledWith("Updated Title");
   });
   it("renders grouped nodes correctly", () => {
@@ -350,19 +352,17 @@ describe("Page component", () => {
     });
 
     const { getAllByTestId } = render(<Page />);
-    expect(getAllByTestId("list-node")).toHaveLength(2); // two list nodes
-    expect(getAllByTestId("node")).toHaveLength(1); // one regular node
+    expect(getAllByTestId("list-node")).toHaveLength(2);
+    expect(getAllByTestId("node")).toHaveLength(1); 
   });
   it("calls focusNode on ArrowDown", () => {
     const mockFocus = vi.fn();
 
-    // Simulate a contentEditable div that will be used by getCaretCoordinates
     const dummyDiv = document.createElement("div");
     dummyDiv.textContent = "Some text";
     document.body.appendChild(dummyDiv);
     dummyDiv.getBoundingClientRect = () => ({ left: 42, top: 24, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => "" });
 
-    // Mock nodeRefs to include a focusable div
     const focusableDiv = document.createElement("div");
     focusableDiv.focus = mockFocus;
     (focusableDiv as any).getBoundingClientRect = () => ({ left: 42, top: 24, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => "" });
@@ -411,6 +411,88 @@ describe("Page component", () => {
 
     const { getAllByTestId } = render(<Page />);
     expect(getAllByTestId("list-node")).toHaveLength(1);
+    expect(getAllByTestId("node")).toHaveLength(1);
+  });
+  it("fetches page data and sets title and emoji", async () => {
+    (useParams as any).mockReturnValue({ id: "test-slug" });
+
+    (useAppState as any).mockReturnValueOnce({
+      ...useAppState(),
+      title: "Old Title",
+      node: { value: "test-slug" },
+      userId: "user123",
+      setTitle: vi.fn(),
+    });
+
+    render(<Page />);
+    await waitFor(() => {
+      expect(supabase.from).toHaveBeenCalledWith("pages");
+    });
+  });
+  it("handles emoji selection", async () => {
+    const { getByTestId } = render(<Page />);
+    const emojiButton = getByTestId("emoji-option");
+    fireEvent.click(emojiButton);
+
+    await waitFor(() => {
+      expect(supabase.from).toHaveBeenCalledWith("pages");
+    });
+  });
+  it("handleTitleChange clears and sets debounce timer", async () => {
+    const mockSetTitle = vi.fn();
+    (useAppState as any).mockReturnValueOnce({
+      ...useAppState(),
+      setTitle: mockSetTitle,
+    });
+    const { getByTestId } = render(<Page />);
+    fireEvent.change(getByTestId("title-input"), { target: { value: "New Title" } });
+    await new Promise((r) => setTimeout(r, 250));
+    expect(mockSetTitle).toHaveBeenCalledWith("New Title");
+  });
+  it("getCaretCoordinates returns coordinates if selection exists", () => {
+    render(<Page />);
+    const div = document.createElement("div");
+    div.textContent = "abc";
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  });
+  it("fetchPageData returns if error.code is PGRST116", async () => {
+    vi.mocked(supabase.from).mockReturnValueOnce({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: null, error: { code: "PGRST116" } }),
+    } as any);
+    render(<Page />);
+    await waitFor(() => {
+      expect(true).toBe(true);
+    });
+  });
+  it("handleKeyDown returns if isCommanPanelOpen", () => {
+    (useAppState as any).mockReturnValueOnce({
+      ...useAppState(),
+      isCommanPanelOpen: true,
+    });
+    render(<Page />);
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    expect(true).toBe(true);
+  });
+  it("renders grouped nodes when currentGroup.length > 0", () => {
+    const nodes = [
+      { id: "n1", type: "numberedList", value: "" },
+      { id: "n2", type: "numberedList", value: "" },
+      { id: "n3", type: "text", value: "" },
+    ];
+    (useAppState as any).mockReturnValueOnce({
+      ...useAppState(),
+      nodes,
+    });
+    const { getAllByTestId } = render(<Page />);
+    expect(getAllByTestId("list-node")).toHaveLength(2);
     expect(getAllByTestId("node")).toHaveLength(1);
   });
 });

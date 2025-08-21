@@ -254,6 +254,7 @@ const updateNodeCaptionInPage = async (pageId: string, nodeId: string, newCaptio
                                 ref={captionInputRef}
                                 type="text"
                                 className={styles.captionInput}
+                                data-testid="caption-input"
                                 value={caption}
                                 onChange={handleCaptionChange}
                                 onBlur={async () => {

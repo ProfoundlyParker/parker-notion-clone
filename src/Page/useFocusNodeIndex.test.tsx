@@ -97,4 +97,10 @@ describe('useFocusedNodeIndex', () => {
     unmount()
     expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
   })
+  it('no nodes or commandPanelRef', () => {
+    const { result } = renderHook(() =>
+      useFocusedNodeIndex({ nodes: [], commandPanelRef: null })
+    )
+    expect(result.current[0]).toBe(0)
+  });
 })

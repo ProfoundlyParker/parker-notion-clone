@@ -78,8 +78,6 @@ export const Page = ({ node }: PageNodeProps) => {
         selection?.addRange(range);
     }
 
-
-
     const focusNode = (index: number) => {
         const caretCoords = getCaretCoordinates();
         const ref = nodeRefs.current.get(index);
